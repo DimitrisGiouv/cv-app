@@ -1,0 +1,32 @@
+.app-header {
+  @apply flex items-center bg-gray-200 dark:bg-gray-800 py-4 px-6;
+  /* flex-row by default */
+}
+
+/* Left section - for logo or nav items */
+.header-left {
+  @apply flex items-center space-x-4; /* space between items */
+}
+
+/* Center section - for navigation, titles, etc. */
+.header-center {
+  @apply flex-1 flex justify-center items-center space-x-4 text-lg;
+}
+
+/* Right section - for buttons or icons */
+.header-right {
+  @apply flex items-center  space-x-4;
+}
+
+.logo-header {
+  @apply h-12;
+}
+
+.toggle-mode {
+  @apply w-32 p-2 text-black dark:text-white rounded cursor-pointer;
+  transition: background-color 0.1s ease;
+}
+
+.toggle-mode:hover {
+  @apply dark:bg-gray-700 bg-gray-300;
+}

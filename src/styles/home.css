@@ -1,0 +1,27 @@
+  
+  .home-container {
+    @apply flex h-full;
+  }
+
+  .home-left {
+    @apply w-1/5 bg-gray-100 dark:bg-gray-800 p-6;
+    @apply flex flex-col items-center;
+  }
+
+  .home-right {
+    @apply w-4/5 bg-white dark:bg-gray-900 p-6;
+  }
+  
+  .Resumes-button {
+    @apply w-32 p-2 text-black dark:text-white rounded cursor-pointer;
+    transition: background-color 0.1s ease;
+  }
+  
+  .Resumes-button:hover {
+    @apply dark:bg-gray-700 bg-gray-300;
+  }
+
+
+  .section-title {
+    @apply text-xl font-semibold mb-4;
+  }
