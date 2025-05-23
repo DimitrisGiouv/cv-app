@@ -1,0 +1,22 @@
+
+  .Resumes-button {
+    @apply grid p-2 text-black dark:text-white rounded cursor-pointer;
+    transition: background-color 0.1s ease;
+  }
+  
+  .Resumes-button:hover {
+    @apply dark:bg-gray-700 bg-gray-300;
+  }
+
+  .Settings-button {
+    @apply grid p-2 text-black dark:text-white rounded cursor-pointer;
+    transition: background-color 0.1s ease;
+  }
+
+  .Settings-button:hover {
+    @apply dark:bg-gray-700 bg-gray-300;
+  }
+
+  .link.active {
+    @apply bg-gray-300 dark:bg-gray-700;
+  }

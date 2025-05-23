@@ -1,0 +1,31 @@
+  
+  .container {
+    @apply flex;
+  }
+
+  .container-left{
+    @apply w-1/5 bg-gray-200 dark:bg-gray-800 p-6;
+  }
+
+  .container-right {
+    @apply w-4/5 bg-white dark:bg-gray-900 p-6;
+  }
+
+  .container-left-create{
+    @apply w-1/3 bg-gray-200 dark:bg-gray-800 p-6;
+  }
+
+  .container-right-create {
+    @apply w-2/3 bg-white dark:bg-gray-900 p-6;
+  }
+  
+  .left-top {
+    @apply w-full h-max mb-4;
+  }
+
+  .left-bottom {
+    @apply w-full h-min;
+  }
+  .section-title {
+    @apply text-xl font-semibold mb-4;
+  }

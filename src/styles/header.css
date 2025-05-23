@@ -1,25 +1,17 @@
 .app-header {
   @apply flex items-center bg-gray-200 dark:bg-gray-800 py-4 px-6;
-  /* flex-row by default */
 }
 
-/* Left section - for logo or nav items */
 .header-left {
-  @apply flex items-center space-x-4; /* space between items */
-}
-
-/* Center section - for navigation, titles, etc. */
-.header-center {
-  @apply flex-1 flex justify-center items-center space-x-4 text-lg;
-}
-
-/* Right section - for buttons or icons */
-.header-right {
-  @apply flex items-center  space-x-4;
+  @apply w-1/5 flex;
 }
 
 .logo-header {
-  @apply h-12;
+  @apply h-12 ml-10 ;
+}
+
+.header-center {
+  @apply w-3/5 text-center;
 }
 
 .toggle-mode {
@@ -29,4 +21,14 @@
 
 .toggle-mode:hover {
   @apply dark:bg-gray-700 bg-gray-300;
+}
+
+.header-right {
+  @apply w-1/5 flex justify-end;
+}
+
+.button-login {
+  @apply w-16 p-2 mr-5 text-black dark:text-white rounded cursor-pointer
+   hover:bg-gray-300 dark:hover:bg-gray-700;
+  transition: background-color 0.1s ease;
 }
