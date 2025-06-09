@@ -1,75 +1,122 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import {FormInput} from "../components/FormInput";
-import {FormInput2} from "../components/FormInput";
-import {FormP} from "../components/FormInput";
-import { Link } from "react-router-dom";
-import "../styles/pageStyle.css";
+import { FormInput, FormInput2, FormP } from "../components/FormInput";
+import { templates, getTemplateClass } from "../templates/resumeTemplates";
+import FirstTemplate from "../templates/component/firstTemplate";
+
+import "../styles/createCV.css";
 
 function CreateCV() {
-    const { register, handleSubmit, formState: { errors } } = useForm();
-    const onSubmit = (data) => {
-        console.log("Resume Data", data);
-    };
-    return (
-        <div className="container">
-            <div className="container-left-create">
-                <h2 className="section-title">Create Your CV</h2>
-                <div className="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 p-6">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <FormInput
-                            label="Full Name"
-                            error={errors.name?.message}
-                            registerProps={register("name", { required: "Name is required" })}
-                        />
-                        <FormInput2
-                            label1="Email"
-                            label2="Website"
-                            error1={errors.email?.message}
-                            registerProps1={register("email", { required: "Email is required" })}
-                        />
-                        <FormInput2
-                            label1="Phone"
-                            label2="Location"
-                            error1={errors.phone?.message}
-                            error2={errors.location?.message}
-                            registerProps1={register("phone", { required: "Phone is required" })}
-                            registerProps2={register("location", { required: "Location is required" })}
-                        />
-                        <FormInput
-                            label="Phone Number"
-                            error={errors.phone?.message}
-                            registerProps={register("phone", { required: "Phone number is required" })}
-                        />
-                        <FormInput2
-                            label1="Alternate Phone 1"
-                            label2="Alternate Phone 2"
-                            error1={errors.alternate1?.message}
-                            error2={errors.alternate2?.message}
-                            registerProps1={register("alternate1", { required: "Alternate phone 1 is required" })}
-                            registerProps2={register("alternate2", { required: "Alternate phone 2 is required" })}
-                        />
-                        <FormP
-                            label="Summary"
-                            error={errors.summary?.message}
-                            registerProps={register("summary", { required: "Summary is required" })}
-                        />
-                        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-                            Submit
-                        </button>
-                        
-                        <Link to="/preview">
-                            <button className="bg-green-500 text-white px-4 py-2 rounded mt-4">
-                                Preview CV
-                            </button>
-                        </Link>
-                    </form>
-                </div>
+  const { register, handleSubmit, formState: { errors }, watch } = useForm();
+  const formData = watch();
+  const [selectedTemplate, setSelectedTemplate] = useState("clean");
+  const [fieldFontSizes, setFieldFontSizes] = useState({
+    name: "text-xl",
+    headline: "text-base",
+    email: "text-sm",
+    phone: "text-sm",
+    website: "text-sm",
+    location: "text-sm",
+    summary: "text-base",
+  });
+
+  const onSubmit = (data) => {
+    console.log("Submitted Resume Data", data);
+  };
+
+  return (
+    <div className="cv-layout">
+      <div className="cv-form-panel">
+        <h2 className="cv-section-title">Basics</h2>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FormInput
+            label="Full Name"
+            error={errors.name?.message}
+            registerProps={register("name", { required: "Name is required" })}
+          />
+          
+          <FontSizeSelector fieldKey="name" label="Name" />
+          
+          <FormInput
+            label="Headline"
+            error={errors.headline?.message}
+            registerProps={register("headline", { required: "Headline is required" })}
+          />
+           <FontSizeSelector fieldKey="email" label="Email" />
+
+          <FormInput2
+            label1="Email"
+            label2="Website"
+            error1={errors.email?.message}
+            error2={errors.website?.message}
+            registerProps1={register("email", { required: "Email is required" })}
+            registerProps2={register("website", { required: "Website is required" })}
+          />
+
+          <FormInput2
+            label1="Phone"
+            label2="Location"
+            error1={errors.phone?.message}
+            error2={errors.location?.message}
+            registerProps1={register("phone", { required: "Phone is required" })}
+            registerProps2={register("location", { required: "Location is required" })}
+          />
+
+          <FormP
+            label="Summary"
+            error={errors.summary?.message}
+            registerProps={register("summary", { required: "Summary is required" })}
+          />
+        </form>
+      </div>
+
+      <div className="cv-preview-panel">
+          {selectedTemplate === "Template_1" ? ( <FirstTemplate data={formData} fontSizes={fieldFontSizes}/> ) : (
+            <div className={`cv-preview-box ${getTemplateClass(selectedTemplate)}`}>
             </div>
-            <div className="container-right-create">
+          )}
+      </div>  
+
+      <div className="cv-template-panel">
+        <h2 className="cv-section-title">Templates</h2>
+        <div className="cv-template-box space-y-2">
+          {Object.keys(templates).map((key) => (
+            <div
+              key={key}
+              onClick={() => setSelectedTemplate(key)}
+              className={`cursor-pointer p-3 rounded border text-center text-sm bg-white dark:bg-gray-700 hover:shadow-md ${
+                selectedTemplate === key ? "border-blue-500" : "border-gray-400"
+              }`}
+            >
+              {key.toUpperCase()}
             </div>
-            <h2>Select Tamplaet</h2>
+          ))}
         </div>
-    );
+      </div>
+    </div>
+  );
 }
+
 export default CreateCV;
+
+
+const FontSizeSelector = ({ fieldKey, label }) => (
+  <div className="mb-2">
+    <label className="label-title">{label} Font Size</label>
+    <select
+      className="input-field"
+      value={fieldFontSizes[fieldKey]}
+      onChange={(e) =>
+        setFieldFontSizes((prev) => ({
+          ...prev,
+          [fieldKey]: e.target.value,
+        }))
+      }
+    >
+      <option value="text-sm">Small</option>
+      <option value="text-base">Medium</option>
+      <option value="text-lg">Large</option>
+      <option value="text-xl">Extra Large</option>
+    </select>
+  </div>
+);

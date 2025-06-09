@@ -5,6 +5,7 @@ import logo from "../assets/logo.png";
 import "../styles/globals.light.css";
 import "../styles/globals.dark.css";
 import { useEffect, useState } from "react";
+import LoginModalExample from "./authModal";
 
 
 function Header() {
@@ -20,18 +21,12 @@ function Header() {
       </div>
       <div className="header-right">
         <button className="button-login">
-          <Link to="./create" className="link">
-            Login
-          </Link>
+          <LoginModalExample />
         </button>
       </div>
     </header>
     );
   }
-
-  
-
-
 
 function DarkModeToggle() {
   const [darkMode, setDarkMode] = useState(true);

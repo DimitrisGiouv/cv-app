@@ -1,6 +1,6 @@
   
   .container {
-    @apply flex;
+    @apply flex w-full min-h-0;
   }
 
   .container-left{

@@ -1,12 +1,12 @@
 import "../styles/forms.css";
 
-    export function FormInput({ label, error, registerProps }) {
+    export function FormInput({ label, error, registerProps, fontSize = "text-base" }) {
         return (
-            <div className="mb-4">
-                <label className="label-title">{label}</label>
-                <input {...registerProps} className="input-field" />
-                {error && <span className="error">{error}</span>}
-            </div>
+        <div className="mb-4">
+            <label className="label-title">{label}</label>
+            <input {...registerProps} className={`input-field ${fontSize}`} />
+            {error && <span className="error">{error}</span>}
+        </div>
         );
     }
 
@@ -35,6 +35,15 @@ import "../styles/forms.css";
                 <label className="label-title">{label}</label>
                 <textarea {...registerProps} className="input-field-p"rows={5} />
                 {error && <span className="error">{error}</span>}
+            </div>
+        );
+    }
+
+    export function FormRegister({placeholder,error,registerProps}) {
+        return (
+            <div className="mb-1" >
+                <input {...registerProps}  placeholder={placeholder} className="input-field-register" />
+                {error && <span className="error-register">{error}</span>}
             </div>
         );
     }

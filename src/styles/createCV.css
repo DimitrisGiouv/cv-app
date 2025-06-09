@@ -1,0 +1,41 @@
+.cv-layout {
+    @apply flex w-full min-h-0;
+  }
+  
+  .cv-form-panel {
+    @apply w-2/4 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
+  }
+  
+  .cv-preview-panel {
+    @apply w-2/3  bg-white dark:bg-gray-900 text-black dark:text-white p-6 overflow-y-auto;
+  }
+  
+  .cv-template-panel {
+    @apply w-2/4 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
+  }
+  
+  .cv-section-title {
+    @apply text-xl font-bold mb-4;
+  }
+  
+  
+  .cv-template-box {
+    @apply grid gap-4 mt-4;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded;
+  }
+
+  .clean-template {
+    @apply font-sans text-gray-800 dark:text-gray-100;
+  }
+  
+  .bold-template {
+    @apply font-serif text-gray-900 dark:text-white;
+  }
+  
+  .modern-template {
+    @apply font-mono text-blue-900 dark:text-blue-300;
+  }
+  
