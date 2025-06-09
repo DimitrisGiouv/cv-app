@@ -1,0 +1,19 @@
+.label-title{
+    @apply  text-sm;
+}
+
+.input-field{
+    @apply border dark:border-gray-700 dark:bg-gray-900 p-2 w-full h-7 ;
+}
+
+.error{
+    @apply text-red-500 text-sm;
+}
+
+.input-2{
+    @apply flex;
+}
+
+.input-field-p{
+    @apply border  dark:border-gray-700 dark:bg-gray-900 p-2 w-full h-auto ;
+}
