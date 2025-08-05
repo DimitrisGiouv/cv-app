@@ -26,9 +26,3 @@
 .header-right {
   @apply w-1/5 flex justify-end;
 }
-
-.button-login {
-  @apply w-16 p-2 mr-5 text-black dark:text-white rounded cursor-pointer
-   hover:bg-gray-300 dark:hover:bg-gray-700;
-  transition: background-color 0.1s ease;
-}

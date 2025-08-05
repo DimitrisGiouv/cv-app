@@ -5,7 +5,7 @@ import logo from "../assets/logo.png";
 import "../styles/globals.light.css";
 import "../styles/globals.dark.css";
 import { useEffect, useState } from "react";
-import LoginModalExample from "./authModal";
+import LoginButton from "./authModal";
 
 
 function Header() {
@@ -19,10 +19,10 @@ function Header() {
       <div className="header-center">
         <DarkModeToggle />
       </div>
-      <div className="header-right">
-        <button className="button-login">
-          <LoginModalExample />
-        </button>
+      <div className="header-right pr-4">
+        <div className="hover:bg-gray-300 dark:hover:bg-gray-700 text-center w-20 rounded p-1">
+          <LoginButton />
+        </div>
       </div>
     </header>
     );

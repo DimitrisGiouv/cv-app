@@ -1,17 +1,18 @@
 .cv-layout {
-    @apply flex w-full min-h-0;
+    @apply flex w-full min-h-0 ;
   }
   
   .cv-form-panel {
-    @apply w-2/4 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
+    @apply w-2/5 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
   }
   
   .cv-preview-panel {
-    @apply w-2/3  bg-white dark:bg-gray-900 text-black dark:text-white p-6 overflow-y-auto;
+    @apply flex justify-center items-start  px-4 py-6 bg-white dark:bg-gray-900 text-black dark:text-white;
   }
   
+  
   .cv-template-panel {
-    @apply w-2/4 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
+    @apply w-1/5 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto;
   }
   
   .cv-section-title {

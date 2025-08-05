@@ -5,7 +5,8 @@ export const templates = {
   
   export function getTemplateClass(templateKey) {
     switch (templateKey) {
-      case "clean":
+      case "Template_1":
+        return "clean-template"; // or replace with another class if needed
       default:
         return "clean-template";
     }
