@@ -118,10 +118,10 @@ function CreateCV() {
         </form>
       </div>
 
-      <div className="cv-preview-panel">
+      <div className="cv-preview-panel ">
         {selectedTemplate === "Template_1" && (
           <div ref={componentRef} className="w-[794px] mx-auto">
-            <div className=" w-[794px] min-h-[1123px]  mx-auto p-6 overflow-hidden break-after-page">
+            <div className=" w-[794px] min-h-[1123px] p-6 overflow-hidden break-after-page">
               <FirstTemplate data={formData} fontSizes={fieldFontSizes} />
             </div>
             {/* Optionally: add another .a4-page with overflow content */}

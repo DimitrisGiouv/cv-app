@@ -4,7 +4,7 @@ import { Phone, Mail, MapPin, Globe } from "lucide-react";
 
 const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
   return (
-    <div className="flex bg-white text-gray-900 break-words w-full h-full">
+    <div className="flex h-[1123px] bg-white text-gray-900 break-words w-full ">
       <div className="w-1/3 bg-blue-900 text-white p-6 space-y-6">
         <div className="h-32 w-32 bg-gray-300 rounded-full mx-auto flex items-center justify-center text-sm text-gray-800 bg-opacity-80">
           Photo
