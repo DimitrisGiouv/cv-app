@@ -1,187 +1,414 @@
-import "../styles/forms.css";
+import clsx from 'clsx';
 
-export function FormRegister({ placeholder, error, registerProps }) {
-  return (
-    <div className="mb-1">
-      <input {...registerProps} placeholder={placeholder} className="input-field-register" />
-      {error && <span className="error-register">{error}</span>}
-    </div>
-  );
-}
-
-export function FormInput({ label, error, registerProps, fontSize = "text-base", fontSizeDropdown = null }) {
+/**
+ * Single text input field with label, error handling, and optional font size dropdown
+ */
+export function TextInput({
+  label,
+  error,
+  registerProps,
+  fontSize = 'text-base',
+  fontSizeDropdown = null,
+  className = '',
+}) {
   return (
     <div className="mb-4">
-      <label className="label-title">{label}</label>
+      <label className="text-sm">{label}</label>
       <div className="flex items-center gap-1">
-        <input {...registerProps} className="input-field" />
+        <input
+          {...registerProps}
+          className={clsx(
+            'border dark:border-gray-700',
+            'dark:bg-gray-900 bg-white',
+            'p-2 w-full h-7',
+            'focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'rounded',
+            className
+          )}
+        />
         {fontSizeDropdown}
       </div>
-      {error && <span className="error">{error}</span>}
+      {error && (
+        <span className="text-red-500 text-sm">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
 
-export function FormInput2({
+/**
+ * Two side-by-side text input fields with labels, error handling, and optional font size dropdowns
+ */
+export function TwoColumnTextInput({
   label1,
   label2,
   error1,
   error2,
   registerProps1,
   registerProps2,
-  fontSize1 = "text-base",
-  fontSize2 = "text-base",
+  fontSize1 = 'text-base',
+  fontSize2 = 'text-base',
   fontSizeDropdown1 = null,
-  fontSizeDropdown2 = null
+  fontSizeDropdown2 = null,
+  className = '',
 }) {
   return (
     <div className="mb-4 flex gap-4">
       <div className="w-1/2">
-        <label className="label-title">{label1}</label>
+        <label className="text-sm">{label1}</label>
         <div className="flex items-center gap-1">
-          <input {...registerProps1} className="input-field flex-1" />
+          <input
+            {...registerProps1}
+            className={clsx(
+              'border dark:border-gray-700',
+              'dark:bg-gray-900 bg-white',
+              'p-2 w-full h-7 flex-1',
+              'focus:outline-none focus:ring-2 focus:ring-blue-600',
+              'rounded',
+              className
+            )}
+          />
           {fontSizeDropdown1}
         </div>
-        {error1 && <span className="error">{error1}</span>}
+        {error1 && (
+          <span className="text-red-500 text-sm">
+            {error1}
+          </span>
+        )}
       </div>
 
       <div className="w-1/2">
-        <label className="label-title">{label2}</label>
+        <label className="text-sm">{label2}</label>
         <div className="flex items-center gap-1">
-          <input {...registerProps2} className="input-field flex-1" />
+          <input
+            {...registerProps2}
+            className={clsx(
+              'border dark:border-gray-700',
+              'dark:bg-gray-900 bg-white',
+              'p-2 w-full h-7 flex-1',
+              'focus:outline-none focus:ring-2 focus:ring-blue-600',
+              'rounded',
+              className
+            )}
+          />
           {fontSizeDropdown2}
         </div>
-        {error2 && <span className="error">{error2}</span>}
+        {error2 && (
+          <span className="text-red-500 text-sm">
+            {error2}
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-export function FormP({ label, error, registerProps, fontSize = "text-base", fontSizeDropdown = null }) {
+/**
+ * Multi-line textarea input field with label, error handling, and optional font size dropdown
+ */
+export function TextAreaInput({
+  label,
+  error,
+  registerProps,
+  fontSize = 'text-base',
+  fontSizeDropdown = null,
+  className = '',
+}) {
   return (
     <div className="mb-4">
-      <label className="label-title">{label}</label>
+      <label className="text-sm">{label}</label>
       <div className="flex items-center gap-1">
-        <textarea {...registerProps} className="input-field-p text-sm resize-none" rows={7} />
+        <textarea
+          {...registerProps}
+          className={clsx(
+            'border dark:border-gray-700',
+            'dark:bg-gray-900 bg-white',
+            'p-2 w-full h-auto',
+            'text-sm resize-none',
+            'focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'rounded',
+            className
+          )}
+          rows={7}
+        />
         {fontSizeDropdown}
       </div>
-      {error && <span className="error">{error}</span>}
+      {error && (
+        <span className="text-red-500 text-sm">
+          {error}
+        </span>
+      )}
     </div>
   );
 }
 
+/**
+ * Authentication form input field for login/register forms with placeholder and error handling
+ */
+export function AuthInput({ placeholder, error, registerProps }) {
+  return (
+    <div className="mb-1">
+      <input
+        {...registerProps}
+        placeholder={placeholder}
+        className={clsx(
+          'border border-gray-200 dark:border-gray-700',
+          'bg-white dark:bg-gray-900',
+          'rounded w-full h-1/2',
+          'mb-3 px-3 py-3',
+          'focus:outline-none focus:ring-2 focus:ring-blue-600'
+        )}
+      />
+      {error && (
+        <span className="flex text-red-500 text-sm">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Dynamic skills field list with add/remove buttons, supports skill name, description, and proficiency level
+ */
 export function FormSkills({ fields, register, errors, remove, append }) {
   return (
     <div className="mb-6">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="cv-section-title">Skills</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Skills</h3>
         <button
           type="button"
-          onClick={() => append({ name: "", description: "", level: 50 })}
-          className="text-sm  dark:hover:text-gray-600 light:hover:text-white-500"
+          onClick={() => append({ name: '', description: '', level: 50 })}
+          className={clsx(
+            'text-sm py-1 px-3',
+            'hover:bg-gray-200 dark:hover:bg-gray-700',
+            'rounded transition-colors',
+            'font-medium'
+          )}
+          aria-label="Add skill"
         >
           ➕ Add Skill
         </button>
       </div>
 
-      {fields.map((item, index) => (
-        <div key={item.id} className="mb-3 flex flex-col gap-1">
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              placeholder="Skill name"
-              {...register(`skills.${index}.name`, { required: "Skill name is required" })}
-              className="input-field w-full"
-            />
-            <input
-              type="text"
-              placeholder="Description"
-              {...register(`skills.${index}.description`, { required: "Description is required" })}
-              className="input-field w-full"
-            />
-            <button
-              type="button"
-              onClick={() => remove(index)}
-              className="text-red-600 hover:text-red-800 text-sm px-2"
-              title="Remove skill"
-            >
-              ✕
-            </button>
+      {fields.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+          No skills added yet
+        </p>
+      ) : (
+        fields.map((item, index) => (
+          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="flex gap-2 items-end">
+              {/* Skill Name */}
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  Skill Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., React, JavaScript"
+                  {...register(`skills.${index}.name`, {
+                    required: 'Skill name is required',
+                  })}
+                  className={clsx(
+                    'border dark:border-gray-700',
+                    'dark:bg-gray-900 bg-white',
+                    'p-2 w-full h-8',
+                    'text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                    'rounded'
+                  )}
+                />
+              </div>
+
+              {/* Description */}
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., 3 years experience"
+                  {...register(`skills.${index}.description`)}
+                  className={clsx(
+                    'border dark:border-gray-700',
+                    'dark:bg-gray-900 bg-white',
+                    'p-2 w-full h-8',
+                    'text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                    'rounded'
+                  )}
+                />
+              </div>
+
+              {/* Level */}
+              <div className="flex-shrink-0 w-20">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  Level
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="100"
+                  {...register(`skills.${index}.level`)}
+                  className="w-full cursor-pointer"
+                />
+              </div>
+
+              {/* Delete Button */}
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className={clsx(
+                  'text-red-500 hover:text-red-700',
+                  'py-1 px-2 rounded',
+                  'transition-colors',
+                  'h-8 flex items-center',
+                  'mb-1'
+                )}
+                aria-label="Remove skill"
+              >
+                ❌
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {errors?.skills?.[index]?.name && (
+              <span className="text-red-500 text-xs mt-2 block">
+                {errors.skills[index].name.message}
+              </span>
+            )}
           </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            {...register(`skills.${index}.level`, {
-              valueAsNumber: true,
-              required: "Level is required"
-            })}
-            className="w-full"
-          />
-          {(errors?.skills?.[index]?.name || errors?.skills?.[index]?.description) && (
-            <span className="text-xs text-red-500">
-              {errors.skills[index]?.name?.message || errors.skills[index]?.description?.message}
-            </span>
-          )}
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
 
-
+/**
+ * Dynamic education field list with add/remove buttons, supports school, degree, and graduation year
+ */
 export function FormEducation({ fields, register, errors, remove, append }) {
   return (
     <div className="mb-6">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="cv-section-title">Education</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Education</h3>
         <button
           type="button"
-          onClick={() => append({ school: "", degree: "", year: "" })}
-          className="text-sm  dark:hover:text-gray-600"
+          onClick={() => append({ school: '', degree: '', year: '' })}
+          className={clsx(
+            'text-sm py-1 px-3',
+            'hover:bg-gray-200 dark:hover:bg-gray-700',
+            'rounded transition-colors',
+            'font-medium'
+          )}
+          aria-label="Add education"
         >
           ➕ Add Education
         </button>
       </div>
 
-      {fields.map((item, index) => (
-        <div key={item.id} className="mb-3 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              className="input-field"
-              {...register(`education.${index}.school`, { required: "School is required" })}
-              placeholder="School / University"
-            />
-            <button
-              type="button"
-              onClick={() => remove(index)}
-              className="text-red-600 hover:text-red-800 text-sm px-2"
-              title="Remove education"
-            >
-              ✕
-            </button>
+      {fields.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400 text-sm italic">
+          No education added yet
+        </p>
+      ) : (
+        fields.map((item, index) => (
+          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="flex gap-2 items-end">
+              {/* School */}
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  School/University
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., MIT, Stanford University"
+                  {...register(`education.${index}.school`, {
+                    required: 'School is required',
+                  })}
+                  className={clsx(
+                    'border dark:border-gray-700',
+                    'dark:bg-gray-900 bg-white',
+                    'p-2 w-full h-8',
+                    'text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                    'rounded'
+                  )}
+                />
+              </div>
+
+              {/* Degree */}
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  Degree
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., B.S. Computer Science"
+                  {...register(`education.${index}.degree`, {
+                    required: 'Degree is required',
+                  })}
+                  className={clsx(
+                    'border dark:border-gray-700',
+                    'dark:bg-gray-900 bg-white',
+                    'p-2 w-full h-8',
+                    'text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                    'rounded'
+                  )}
+                />
+              </div>
+
+              {/* Year */}
+              <div className="flex-shrink-0 w-24">
+                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                  Year
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., 2020"
+                  {...register(`education.${index}.year`, {
+                    required: 'Year is required',
+                  })}
+                  className={clsx(
+                    'border dark:border-gray-700',
+                    'dark:bg-gray-900 bg-white',
+                    'p-2 w-full h-8',
+                    'text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                    'rounded'
+                  )}
+                />
+              </div>
+
+              {/* Delete Button */}
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className={clsx(
+                  'text-red-500 hover:text-red-700',
+                  'py-1 px-2 rounded',
+                  'transition-colors',
+                  'h-8 flex items-center',
+                  'mb-1'
+                )}
+                aria-label="Remove education"
+              >
+                ❌
+              </button>
+            </div>
+
+            {/* Error Messages */}
+            {errors?.education?.[index]?.school && (
+              <span className="text-red-500 text-xs mt-2 block">
+                {errors.education[index].school.message}
+              </span>
+            )}
           </div>
-          <input
-            className="input-field"
-            {...register(`education.${index}.degree`, { required: "Degree is required" })}
-            placeholder="Degree"
-          />
-          <input
-            className="input-field"
-            {...register(`education.${index}.year`, { required: "Graduation Year is required" })}
-            placeholder="Graduation Year"
-          />
-          {(errors?.education?.[index]?.school || errors?.education?.[index]?.degree || errors?.education?.[index]?.year) && (
-            <span className="text-xs text-red-500">
-              {errors.education[index]?.school?.message ||
-                errors.education[index]?.degree?.message ||
-                errors.education[index]?.year?.message}
-            </span>
-          )}
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
-
-

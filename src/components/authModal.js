@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { FormRegister } from "../components/FormInput";
+import { AuthInput } from "../components/FormInput";
 import "../styles/modal.css";
 
 export default function AuthModal() {
@@ -28,12 +28,12 @@ export default function AuthModal() {
             {mode === "login" ? (
             <>
                 <form onSubmit={handleSubmit(handleLogin)}>
-                    <FormRegister
+                    <AuthInput
                         placeholder="Username"
                         error={errors.loginUsername?.message}
                         registerProps={register("loginUsername", { required: "Username is required" })}
                     />
-                    <FormRegister
+                    <AuthInput
                         placeholder="Password"
                         error={errors.loginPassword?.message}
                         registerProps={register("loginPassword", { required: "Password is required" })}
@@ -53,22 +53,22 @@ export default function AuthModal() {
                 ): (
                 <>
                 <form onSubmit={handleSubmit(handleRegister)}>
-                  <FormRegister
+                  <AuthInput
                     placeholder="Username"
                     error={errors.username?.message}
                     registerProps={register("username", { required: "Username is required" })}
                   />
-                  <FormRegister
+                  <AuthInput
                     placeholder="Email"
                     error={errors.email?.message}
                     registerProps={register("email", { required: "Email is required" })}
                   />
-                  <FormRegister
+                  <AuthInput
                     placeholder="Password"
                     error={errors.password?.message}
                     registerProps={register("password", { required: "Password is required" })}
                   />
-                  <FormRegister
+                  <AuthInput
                     placeholder="Password Confirmation"
                     error={errors.passwordConfirmation?.message}
                     registerProps={register("passwordConfirmation", {
