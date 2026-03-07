@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* A4 Page Break Support */
+@layer utilities {
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  
+  .page-break-before {
+    page-break-before: always;
+    break-before: page;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Visual page boundary for preview (not in PDF) */
+  .a4-page-indicator::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1123px;
+    border: 2px dashed rgba(59, 130, 246, 0.3);
+    pointer-events: none;
+  }
+}
+
+/* Print-specific styles for A4 pages */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Hide page indicators when printing */
+  .a4-page-indicator::after {
+    display: none;
+  }
+}

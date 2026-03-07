@@ -1,14 +1,14 @@
   
   .container {
-    @apply flex w-full min-h-0;
+    @apply flex w-full h-full min-h-0 overflow-hidden;
   }
 
   .container-left{
-    @apply w-1/5 bg-gray-200 dark:bg-gray-800 p-6;
+    @apply w-1/5 h-full min-h-0 bg-gray-200 dark:bg-gray-800 p-6 overflow-y-auto border-r border-gray-300 dark:border-gray-700;
   }
 
   .container-right {
-    @apply w-4/5 bg-white dark:bg-gray-900 p-6;
+    @apply flex-1 min-w-0 h-full min-h-0 bg-white dark:bg-gray-900 p-6 overflow-y-auto;
   }
 
   .container-left-create{
@@ -27,5 +27,5 @@
     @apply w-full h-min;
   }
   .section-title {
-    @apply text-xl font-semibold mb-4;
+    @apply text-xl font-semibold mb-4 text-gray-900 dark:text-white;
   }

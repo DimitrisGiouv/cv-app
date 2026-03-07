@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from 'react-i18next';
 import { AuthInput } from "../components/FormInput";
-import "../styles/modal.css";
 
 export default function AuthModal() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState("login");
   const [show, setShow] = useState(false);
 
@@ -13,40 +14,56 @@ export default function AuthModal() {
   };
 
   const handleLogin = () => {
-    alert("Logging in...");
+    alert(t('auth.loggingIn'));
   };
 
   return (
     <>
-      <button onClick={() => setShow(true)}>Login</button>
+      <button
+        onClick={() => setShow(true)}
+        className="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors"
+      >
+        {t('auth.login')}
+      </button>
 
       {show && (
-        <div className="modal-background" onClick={() => setShow(false)}>
-          <div className="modal-window" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">{mode === "login" ? "Login" : "Register"}</h2>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShow(false)}
+        >
+          <div
+            className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-6 w-80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold mb-4">{mode === "login" ? t('auth.login') : t('auth.register')}</h2>
 
             {mode === "login" ? (
             <>
                 <form onSubmit={handleSubmit(handleLogin)}>
                     <AuthInput
-                        placeholder="Username"
+                      placeholder={t('auth.username')}
                         error={errors.loginUsername?.message}
-                        registerProps={register("loginUsername", { required: "Username is required" })}
+                      registerProps={register("loginUsername", { required: t('auth.usernameRequired') })}
                     />
                     <AuthInput
-                        placeholder="Password"
+                      placeholder={t('auth.password')}
                         error={errors.loginPassword?.message}
-                        registerProps={register("loginPassword", { required: "Password is required" })}
+                      registerProps={register("loginPassword", { required: t('auth.passwordRequired') })}
                     />
-                    <button type="submit" className="modal-button">Login</button>
+                    <button
+                      type="submit"
+                      className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+                    >
+                      {t('auth.login')}
+                    </button>
                     </form>
                     <p className="text-sm mt-3">
-                    Don’t have an account?{" "}
+                    {t('auth.noAccount')} {" "}
                     <span
-                        className="register-color cursor-pointer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                         onClick={() => setMode("register")}
                     >
-                        Register
+                        {t('auth.register')}
                     </span>
                     </p>
                 </>
@@ -54,36 +71,41 @@ export default function AuthModal() {
                 <>
                 <form onSubmit={handleSubmit(handleRegister)}>
                   <AuthInput
-                    placeholder="Username"
+                    placeholder={t('auth.username')}
                     error={errors.username?.message}
-                    registerProps={register("username", { required: "Username is required" })}
+                    registerProps={register("username", { required: t('auth.usernameRequired') })}
                   />
                   <AuthInput
-                    placeholder="Email"
+                    placeholder={t('auth.email')}
                     error={errors.email?.message}
-                    registerProps={register("email", { required: "Email is required" })}
+                    registerProps={register("email", { required: t('auth.emailRequired') })}
                   />
                   <AuthInput
-                    placeholder="Password"
+                    placeholder={t('auth.password')}
                     error={errors.password?.message}
-                    registerProps={register("password", { required: "Password is required" })}
+                    registerProps={register("password", { required: t('auth.passwordRequired') })}
                   />
                   <AuthInput
-                    placeholder="Password Confirmation"
+                    placeholder={t('auth.passwordConfirmation')}
                     error={errors.passwordConfirmation?.message}
                     registerProps={register("passwordConfirmation", {
-                      required: "Password confirmation is required",
+                      required: t('auth.passwordConfirmationRequired'),
                     })}
                   />
-                  <button type="submit" className="modal-button">Register</button>
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                  >
+                    {t('auth.register')}
+                  </button>
                 </form>
                 <p className="text-sm mt-3">
-                  Already have an account?{" "}
+                  {t('auth.haveAccount')} {" "}
                   <span
-                    className="register-color cursor-pointer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                     onClick={() => setMode("login")}
                   >
-                    Login
+                    {t('auth.login')}
                   </span>
                 </p>
             </>

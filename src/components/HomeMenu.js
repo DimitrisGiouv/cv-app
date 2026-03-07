@@ -1,32 +1,36 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import "../styles/homeMenu.css";
+import { useTranslation } from 'react-i18next';
 
+const menuButtonBase =
+    "grid p-2 text-black dark:text-white rounded cursor-pointer transition-colors duration-100 hover:bg-gray-300 dark:hover:bg-gray-700";
 
-    export function ResumesButton() {
-        const location = useLocation();
-        const isActive = location.pathname === "/";
+export function ResumesButton() {
+    const { t } = useTranslation();
+    const location = useLocation();
+    const isActive = location.pathname === "/";
 
-        return (
-            <Link
+    return (
+        <Link
             to="/"
-            className={`Resumes-button link ${isActive ? "active" : ""}`}
-            >
-            Resumes
-            </Link>
-        );
-    }
+            className={`${menuButtonBase} ${isActive ? "bg-gray-300 dark:bg-gray-700" : ""}`}
+        >
+            {t('homeMenu.resumes')}
+        </Link>
+    );
+}
 
-    export function SettingsButton() {
-        const location = useLocation();
-        const isActive = location.pathname === "/settings";
+export function SettingsButton() {
+    const { t } = useTranslation();
+    const location = useLocation();
+    const isActive = location.pathname === "/settings";
 
-        return (
-            <Link
+    return (
+        <Link
             to="/settings"
-            className={`Settings-button link ${isActive ? "active" : ""}`}
-            >
-            Settings
-            </Link>
-        );
-    }
+            className={`${menuButtonBase} ${isActive ? "bg-gray-300 dark:bg-gray-700" : ""}`}
+        >
+            {t('homeMenu.settings')}
+        </Link>
+    );
+}
