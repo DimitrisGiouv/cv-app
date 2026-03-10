@@ -12,6 +12,15 @@ const toExternalUrl = (value) => {
 
 const hasText = (value) => String(value ?? '').trim().length > 0;
 const shouldShow = (enabled) => enabled !== false;
+const toSkillLevelLabel = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const clamped = Math.max(0, Math.min(100, Math.round(numeric)));
+  if (clamped >= 90) return 'Expert';
+  if (clamped >= 75) return 'Advanced';
+  if (clamped >= 50) return 'Intermediate';
+  return 'Beginner';
+};
 
 const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const { t } = useTranslation();
@@ -30,7 +39,7 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const mutedTextColor = data?.mutedTextColor || '#6b7280';
 
   return (
-    <div ref={ref} className="w-[794px] min-h-[1123px] mx-auto text-zinc-900 border break-words page-break-inside-avoid" style={{ color: textColor, backgroundColor: surfaceColor, borderColor: dividerColor }}>
+    <div ref={ref} className="w-[794px] min-h-[1123px] box-border mx-auto text-zinc-900 border break-words page-break-inside-avoid" style={{ color: textColor, backgroundColor: surfaceColor, borderColor: dividerColor }}>
       <div className="px-10 pt-10 pb-6 border-b" style={{ borderColor: dividerColor, backgroundColor: `${primaryColor}08` }}>
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
@@ -44,7 +53,7 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
             ) : null}
             {shouldShow(data.showTargetRole) ? (
               <p className="mt-1" style={{ ...fontStyle('targetRole', 14), color: subtitleColor }}>
-                {safeText(data.targetRole, t('template.targetRolePlaceholder'))}
+                {t('template.targetRoleLabel')}: {safeText(data.targetRole, t('template.targetRolePlaceholder'))}
               </p>
             ) : null}
             <div className="mt-3 space-y-1" style={{ color: mutedTextColor }}>
@@ -115,9 +124,22 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
           <section className="mb-7">
             <h2 className="text-xs uppercase tracking-[0.18em] mb-2" style={{ color: sectionTitleColor }}>{t('template.skills')}</h2>
             {data.skills?.length > 0 ? data.skills.map((skill, i) => (
-              <div key={i} className="mb-2">
-                <p className="font-semibold" style={fontStyle('skillName', 14)}>{skill.name || t('template.skillNamePlaceholder')}</p>
-                <p style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>{skill.description || t('template.skillDescriptionPlaceholder')}</p>
+              <div key={i} className="mb-3 last:mb-0">
+                <p className="font-semibold" style={fontStyle('skillName', 14)}>
+                  {skill.name || t('template.skillNamePlaceholder')}
+                  {skill.description ? (
+                    <span className="font-normal" style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>
+                      {' • '}{skill.description}
+                    </span>
+                  ) : null}
+                </p>
+                {skill.category || toSkillLevelLabel(skill.level) ? (
+                  <p style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>
+                    {skill.category || ''}
+                    {skill.category && toSkillLevelLabel(skill.level) ? ' • ' : ''}
+                    {toSkillLevelLabel(skill.level) || ''}
+                  </p>
+                ) : null}
               </div>
             )) : <p className="text-sm text-zinc-500">{t('template.skillsPlaceholder')}</p>}
           </section>
@@ -226,11 +248,12 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
               {data.projects?.length > 0 ? data.projects.map((project, i) => (
                 <div key={i}>
                   <p className="font-semibold" style={fontStyle('projectName', 14)}>{project.name || t('template.projectName')}</p>
-                  <p style={{ ...fontStyle('projectDescription', 12), color: mutedTextColor }}>
-                    {project.role || t('template.role')}
-                    {project.techStack ? ` • ${project.techStack}` : ''}
-                  </p>
-                  <p style={{ ...fontStyle('projectLink', 12), color: mutedTextColor }}>
+                  {[project.role, project.techStack].some(Boolean) ? (
+                    <p style={{ ...fontStyle('projectMeta', 12), color: mutedTextColor }}>
+                      {[project.role, project.techStack].filter(Boolean).join(' • ')}
+                    </p>
+                  ) : null}
+                  <p style={{ ...fontStyle('projectDates', 12), color: mutedTextColor }}>
                     {[project.startDate, project.endDate].filter(Boolean).join(' - ')}
                   </p>
                   {project.link ? (
@@ -243,10 +266,10 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
                     >
                       {project.link}
                     </a>
-                  ) : (
-                    <p className="break-all" style={{ ...fontStyle('projectLink', 12), color: linkColor }}>{t('template.websitePlaceholder')}</p>
-                  )}
-                  <p className="whitespace-pre-line" style={fontStyle('projectDescription', 14)}>{project.description || t('template.projectsPlaceholder')}</p>
+                  ) : null}
+                  {project.description ? (
+                    <p className="whitespace-pre-line" style={fontStyle('projectDescription', 14)}>{project.description}</p>
+                  ) : null}
                 </div>
               )) : <p className="text-sm text-zinc-500">{t('template.projectsPlaceholder')}</p>}
             </div>
@@ -272,8 +295,8 @@ const ThirdTemplate = forwardRef(({ data, fontSizes }, ref) => {
 
           {data.showCustomSections !== false && data.customSections?.length > 0 && data.customSections.map((section, idx) => (
             <section key={idx} className="mb-7">
-              <h2 className="text-sm font-bold border-b pb-1" style={{ borderColor: dividerColor, color: sectionTitleColor }}>{section.title || t('template.customSectionPlaceholder')}</h2>
-              <p className="mt-3 whitespace-pre-line" style={fontStyle('summary', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
+              <h2 className="text-sm font-bold border-b pb-1" style={{ ...fontStyle('customTitle', 14), borderColor: dividerColor, color: sectionTitleColor }}>{section.title || t('template.customSectionPlaceholder')}</h2>
+              <p className="mt-3 whitespace-pre-line" style={fontStyle('customContent', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
             </section>
           ))}
         </main>

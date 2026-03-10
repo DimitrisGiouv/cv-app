@@ -3,7 +3,8 @@ export const templates = {
   Template_1 : "Professional Blue",
   Template_2 : "Executive Split",
   Template_3 : "Editorial Clean",
-  Template_4 : "Modern Cards"
+  Template_4 : "Modern Cards",
+  Template_5 : "Clean Professional"
   };
   
   export function getTemplateClass(templateKey) {
@@ -15,6 +16,8 @@ export const templates = {
       case "Template_3":
         return "clean-template";
       case "Template_4":
+        return "clean-template";
+      case "Template_5":
         return "clean-template";
       default:
         return "clean-template";

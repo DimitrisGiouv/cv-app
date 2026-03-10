@@ -12,6 +12,15 @@ const toExternalUrl = (value) => {
 
 const hasText = (value) => String(value ?? '').trim().length > 0;
 const shouldShow = (enabled) => enabled !== false;
+const toSkillLevelLabel = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const clamped = Math.max(0, Math.min(100, Math.round(numeric)));
+  if (clamped >= 90) return 'Expert';
+  if (clamped >= 75) return 'Advanced';
+  if (clamped >= 50) return 'Intermediate';
+  return 'Beginner';
+};
 
 const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const { t } = useTranslation();
@@ -31,15 +40,15 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const mutedTextColor = data?.mutedTextColor || '#6b7280';
   const headerTextColor = data?.headerTextColor || '#ffffff';
 
-  const SectionCard = ({ title, children }) => (
+  const SectionCard = ({ title, children, titleStyle }) => (
     <section className="rounded-xl border p-4 mb-4" style={{ borderColor: dividerColor, backgroundColor: surfaceAltColor }}>
-      <h2 className="text-xs font-bold uppercase tracking-[0.14em] mb-2" style={{ color: sectionTitleColor }}>{title}</h2>
+      <h2 className="text-xs font-bold uppercase tracking-[0.14em] mb-2" style={{ ...titleStyle, color: sectionTitleColor }}>{title}</h2>
       {children}
     </section>
   );
 
   return (
-    <div ref={ref} className="w-[794px] min-h-[1123px] mx-auto border break-words page-break-inside-avoid" style={{ color: textColor, backgroundColor: surfaceColor, borderColor: dividerColor }}>
+    <div ref={ref} className="w-[794px] min-h-[1123px] box-border mx-auto border break-words page-break-inside-avoid" style={{ color: textColor, backgroundColor: surfaceColor, borderColor: dividerColor }}>
       <div className="px-10 py-8" style={{ backgroundColor: primaryColor, color: headerTextColor }}>
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
@@ -48,7 +57,9 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
               <p className="mt-1" style={{ ...fontStyle('headline', 14), color: subtitleColor }}>{data.headline || t('template.headline')}</p>
             ) : null}
             {shouldShow(data.showTargetRole) ? (
-              <p className="mt-1" style={{ ...fontStyle('targetRole', 14), color: subtitleColor }}>{safeText(data.targetRole, t('template.targetRolePlaceholder'))}</p>
+              <p className="mt-1" style={{ ...fontStyle('targetRole', 14), color: subtitleColor }}>
+                {t('template.targetRoleLabel')}: {safeText(data.targetRole, t('template.targetRolePlaceholder'))}
+              </p>
             ) : null}
           </div>
 
@@ -140,11 +151,12 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
             {data.projects?.length > 0 ? data.projects.map((project, i) => (
               <div key={i} className="mb-3 last:mb-0">
                 <p className="font-semibold" style={fontStyle('projectName', 14)}>{project.name || t('template.projectName')}</p>
-                <p style={{ ...fontStyle('projectDescription', 12), color: mutedTextColor }}>
-                  {project.role || t('template.role')}
-                  {project.techStack ? ` • ${project.techStack}` : ''}
-                </p>
-                <p style={{ ...fontStyle('projectLink', 12), color: mutedTextColor }}>
+                {[project.role, project.techStack].some(Boolean) ? (
+                  <p style={{ ...fontStyle('projectMeta', 12), color: mutedTextColor }}>
+                    {[project.role, project.techStack].filter(Boolean).join(' • ')}
+                  </p>
+                ) : null}
+                <p style={{ ...fontStyle('projectDates', 12), color: mutedTextColor }}>
                   {[project.startDate, project.endDate].filter(Boolean).join(' - ')}
                 </p>
                 {project.link ? (
@@ -157,10 +169,10 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
                   >
                     {project.link}
                   </a>
-                ) : (
-                  <p className="break-all" style={{ ...fontStyle('projectLink', 12), color: linkColor }}>{t('template.websitePlaceholder')}</p>
-                )}
-                <p className="whitespace-pre-line mt-1" style={fontStyle('projectDescription', 14)}>{project.description || t('template.projectsPlaceholder')}</p>
+                ) : null}
+                {project.description ? (
+                  <p className="whitespace-pre-line mt-1" style={fontStyle('projectDescription', 14)}>{project.description}</p>
+                ) : null}
               </div>
             )) : <p className="text-sm" style={{ color: mutedTextColor }}>{t('template.projectsPlaceholder')}</p>}
           </SectionCard>
@@ -171,9 +183,22 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
           {data.showSkills !== false ? (
           <SectionCard title={t('template.skills')}>
             {data.skills?.length > 0 ? data.skills.map((skill, i) => (
-              <div key={i} className="mb-2 last:mb-0">
-                <p className="font-semibold" style={fontStyle('skillName', 14)}>{skill.name || t('template.skillNamePlaceholder')}</p>
-                <p style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>{skill.description || t('template.skillDescriptionPlaceholder')}</p>
+              <div key={i} className="mb-3 last:mb-0">
+                <p className="font-semibold" style={fontStyle('skillName', 14)}>
+                  {skill.name || t('template.skillNamePlaceholder')}
+                  {skill.description ? (
+                    <span className="font-normal" style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>
+                      {' • '}{skill.description}
+                    </span>
+                  ) : null}
+                </p>
+                {skill.category || toSkillLevelLabel(skill.level) ? (
+                  <p style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>
+                    {skill.category || ''}
+                    {skill.category && toSkillLevelLabel(skill.level) ? ' • ' : ''}
+                    {toSkillLevelLabel(skill.level) || ''}
+                  </p>
+                ) : null}
               </div>
             )) : <p className="text-sm" style={{ color: mutedTextColor }}>{t('template.skillsPlaceholder')}</p>}
           </SectionCard>
@@ -251,8 +276,8 @@ const FourthTemplate = forwardRef(({ data, fontSizes }, ref) => {
 
           {data.showCustomSections !== false && data.customSections?.length > 0 &&
             data.customSections.map((section, idx) => (
-              <SectionCard key={idx} title={section.title || t('template.customSectionPlaceholder')}>
-                <p className="whitespace-pre-line" style={fontStyle('summary', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
+              <SectionCard key={idx} title={section.title || t('template.customSectionPlaceholder')} titleStyle={fontStyle('customTitle', 14)}>
+                <p className="whitespace-pre-line" style={fontStyle('customContent', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
               </SectionCard>
             ))}
         </div>

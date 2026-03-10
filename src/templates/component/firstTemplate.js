@@ -13,6 +13,15 @@ const toExternalUrl = (value) => {
 
 const hasText = (value) => String(value ?? '').trim().length > 0;
 const shouldShow = (enabled) => enabled !== false;
+const toSkillLevelLabel = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  const clamped = Math.max(0, Math.min(100, Math.round(numeric)));
+  if (clamped >= 90) return 'Expert';
+  if (clamped >= 75) return 'Advanced';
+  if (clamped >= 50) return 'Intermediate';
+  return 'Beginner';
+};
 
 const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const { t } = useTranslation();
@@ -25,17 +34,17 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
   const dividerColor = data?.dividerColor || `${secondaryColor}66`;
   const surfaceColor = data?.surfaceColor || '#ffffff';
   const sidebarTextColor = data?.sidebarTextColor || data?.headerTextColor || '#ffffff';
-  const skillTrackColor = data?.skillTrackColor || '#e5e7eb';
   const textColor = data?.textColor || '#111827';
   const titleColor = data?.titleColor || '#0f172a';
   const subtitleColor = data?.subtitleColor || '#475569';
   const sectionTitleColor = data?.sectionTitleColor || '#334155';
   const mutedTextColor = data?.mutedTextColor || '#6b7280';
+  const sidebarMutedTextColor = data?.sidebarMutedTextColor || `${sidebarTextColor}cc`;
 
   return (
     <div
       ref={ref}
-      className="flex w-[794px] min-h-[1123px] text-gray-900 break-words mx-auto page-break-inside-avoid"
+      className="flex w-[794px] min-h-[1123px] box-border text-gray-900 break-words mx-auto page-break-inside-avoid"
       style={{ color: textColor, backgroundColor: surfaceColor }}
     >
       <div className="w-1/3 p-6 space-y-6" style={{ backgroundColor: primaryColor, color: sidebarTextColor }}>
@@ -105,40 +114,43 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
 
         {data.showSkills !== false ? (
         <div className="mt-4">
-          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sectionTitleColor, borderColor: dividerColor }}>{t('template.skills')}</h2>
+          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sidebarTextColor, borderColor: dividerColor }}>{t('template.skills')}</h2>
           {data.skills?.length > 0 ? (
             data.skills.map((skill, index) => (
-              <div key={index} className="mb-2">
-                <p className="text-sm font-semibold">
-                  <span style={fontStyle('skillName', 14)}>{skill.name || t('template.skillNamePlaceholder')}</span>
-                  <span className="font-normal text-gray-400" style={fontStyle('skillDescription', 12)}>
-                    {' '}{skill.description || t('template.skillDescriptionPlaceholder')}
-                  </span>
+              <div key={index} className="mb-3 last:mb-0">
+                <p className="text-sm font-semibold" style={fontStyle('skillName', 14)}>
+                  {skill.name || t('template.skillNamePlaceholder')}
+                  {skill.description ? (
+                    <span className="font-normal" style={{ ...fontStyle('skillDescription', 12), color: sidebarMutedTextColor }}>
+                      {' • '}{skill.description}
+                    </span>
+                  ) : null}
                 </p>
-                <p style={{ ...fontStyle('skillDescription', 12), color: mutedTextColor }}>
-                  {skill.category || t('template.categoryPlaceholder')}
-                </p>
-                <div className="w-full rounded h-2 mt-1" style={{ backgroundColor: skillTrackColor }}>
-                  <div className="h-2 rounded" style={{ width: `${skill.level || 0}%`, backgroundColor: secondaryColor }} />
-                </div>
+                {skill.category || toSkillLevelLabel(skill.level) ? (
+                  <p style={{ ...fontStyle('skillDescription', 12), color: sidebarMutedTextColor }}>
+                    {skill.category || ''}
+                    {skill.category && toSkillLevelLabel(skill.level) ? ' • ' : ''}
+                    {toSkillLevelLabel(skill.level) || ''}
+                  </p>
+                ) : null}
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-300">{t('template.skillsPlaceholder')}</p>
+            <p className="text-sm" style={{ color: sidebarMutedTextColor }}>{t('template.skillsPlaceholder')}</p>
           )}
         </div>
         ) : null}
 
         {data.showEducation !== false ? (
         <div className="mt-4">
-          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sectionTitleColor, borderColor: dividerColor }}>{t('template.education')}</h2>
+          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sidebarTextColor, borderColor: dividerColor }}>{t('template.education')}</h2>
           {data.education?.length > 0 ? (
             data.education.map((edu, index) => (
               <div key={index} className="mb-2">
                 <p className="font-semibold" style={fontStyle('educationSchool', 14)}>{edu.school || t('template.educationSchoolPlaceholder')}</p>
-                <p style={{ ...fontStyle('educationDegree', 12), color: mutedTextColor }}>{edu.degree || t('template.educationDegreePlaceholder')}</p>
-                <p style={{ ...fontStyle('educationYear', 12), color: mutedTextColor }}>{edu.year || t('template.educationYearPlaceholder')}</p>
-                <p style={{ ...fontStyle('educationYear', 12), color: mutedTextColor }}>
+                <p style={{ ...fontStyle('educationDegree', 12), color: sidebarMutedTextColor }}>{edu.degree || t('template.educationDegreePlaceholder')}</p>
+                <p style={{ ...fontStyle('educationYear', 12), color: sidebarMutedTextColor }}>{edu.year || t('template.educationYearPlaceholder')}</p>
+                <p style={{ ...fontStyle('educationYear', 12), color: sidebarMutedTextColor }}>
                   {[edu.startDate, edu.endDate].filter(Boolean).join(' - ')}
                   {edu.location ? ` • ${edu.location}` : ''}
                   {edu.gpa ? ` • GPA ${edu.gpa}` : ''}
@@ -146,46 +158,46 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-300">{t('template.educationPlaceholder')}</p>
+            <p className="text-sm" style={{ color: sidebarMutedTextColor }}>{t('template.educationPlaceholder')}</p>
           )}
         </div>
         ) : null}
 
         {data.showLanguages !== false ? (
         <div className="mt-4">
-          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sectionTitleColor, borderColor: dividerColor }}>{t('template.languages')}</h2>
+          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sidebarTextColor, borderColor: dividerColor }}>{t('template.languages')}</h2>
           {data.languages?.length > 0 ? (
             data.languages.map((lang, index) => (
               <p key={index}>
                 <span className="font-semibold" style={fontStyle('languageName', 14)}>
                   {lang.name || t('template.languageNamePlaceholder')}
                 </span>
-                <span style={{ ...fontStyle('languageLevel', 12), color: mutedTextColor }}>
+                <span style={{ ...fontStyle('languageLevel', 12), color: sidebarMutedTextColor }}>
                   {' - '}{lang.level || t('template.languageLevelPlaceholder')}
                   {lang.cefr ? ` (${lang.cefr})` : ''}
                 </span>
               </p>
             ))
           ) : (
-            <p className="text-sm text-gray-300">{t('template.languagesPlaceholder')}</p>
+            <p className="text-sm" style={{ color: sidebarMutedTextColor }}>{t('template.languagesPlaceholder')}</p>
           )}
         </div>
         ) : null}
 
         {data.showCertifications !== false ? (
         <div className="mt-4">
-          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sectionTitleColor, borderColor: dividerColor }}>{t('template.certifications')}</h2>
+          <h2 className="text-base font-bold border-b mb-2 pb-1" style={{ color: sidebarTextColor, borderColor: dividerColor }}>{t('template.certifications')}</h2>
           {data.certifications?.length > 0 ? (
             data.certifications.map((cert, index) => (
               <div key={index} className="mb-2">
                 <p className="font-semibold" style={fontStyle('certificationName', 14)}>{cert.name || t('template.certificationNamePlaceholder')}</p>
-                <p style={{ color: mutedTextColor }}>
+                <p style={{ color: sidebarMutedTextColor }}>
                   <span style={fontStyle('certificationIssuer', 12)}>{cert.issuer || t('template.certificationIssuerPlaceholder')}</span>
                   {' • '}
                   <span style={fontStyle('certificationYear', 12)}>{cert.year || t('template.certificationYearPlaceholder')}</span>
                 </p>
                 {(cert.url || cert.expirationDate) && (
-                  <p style={{ ...fontStyle('certificationYear', 12), color: mutedTextColor }}>
+                  <p style={{ ...fontStyle('certificationYear', 12), color: sidebarMutedTextColor }}>
                     {cert.url || t('template.certificateUrlPlaceholder')}
                     {cert.expirationDate ? ` • ${t('template.expiresOn')} ${cert.expirationDate}` : ''}
                   </p>
@@ -193,7 +205,7 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-300">{t('template.certificationsPlaceholder')}</p>
+            <p className="text-sm" style={{ color: sidebarMutedTextColor }}>{t('template.certificationsPlaceholder')}</p>
           )}
         </div>
         ) : null}
@@ -206,7 +218,9 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
             <p className="italic" style={{ ...fontStyle('headline', 14), color: subtitleColor }}>{data.headline || t('template.headline')}</p>
           ) : null}
           {shouldShow(data.showTargetRole) ? (
-            <p style={{ ...fontStyle('targetRole', 14), color: subtitleColor }}>{safeText(data.targetRole, t('template.targetRolePlaceholder'))}</p>
+            <p style={{ ...fontStyle('targetRole', 14), color: subtitleColor }}>
+              {t('template.targetRoleLabel')}: {safeText(data.targetRole, t('template.targetRolePlaceholder'))}
+            </p>
           ) : null}
         </div>
 
@@ -262,11 +276,12 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
             data.projects.map((project, index) => (
               <div key={index} className="mb-3">
                 <p className="font-semibold" style={fontStyle('projectName', 14)}>{project.name || t('template.projectName')}</p>
-                <p style={{ ...fontStyle('projectDescription', 12), color: mutedTextColor }}>
-                  {project.role || t('template.role')}
-                  {project.techStack ? ` • ${project.techStack}` : ''}
-                </p>
-                <p style={{ ...fontStyle('projectLink', 12), color: mutedTextColor }}>
+                {[project.role, project.techStack].some(Boolean) ? (
+                  <p style={{ ...fontStyle('projectMeta', 12), color: mutedTextColor }}>
+                    {[project.role, project.techStack].filter(Boolean).join(' • ')}
+                  </p>
+                ) : null}
+                <p style={{ ...fontStyle('projectDates', 12), color: mutedTextColor }}>
                   {[project.startDate, project.endDate].filter(Boolean).join(' - ')}
                 </p>
                 {project.link ? (
@@ -313,10 +328,10 @@ const FirstTemplate = forwardRef(({ data, fontSizes }, ref) => {
         {data.showCustomSections !== false && data.customSections?.length > 0 &&
           data.customSections.map((section, idx) => (
             <div key={idx}>
-              <h2 className="text-xl font-bold border-b mb-2 pb-1" style={{ color: sectionTitleColor, borderColor: dividerColor }}>
+              <h2 className="text-xl font-bold border-b mb-2 pb-1" style={{ ...fontStyle('customTitle', 14), color: sectionTitleColor, borderColor: dividerColor }}>
                 {section.title || t('template.customSectionPlaceholder')}
               </h2>
-              <p className="whitespace-pre-line" style={fontStyle('summary', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
+              <p className="whitespace-pre-line" style={fontStyle('customContent', 14)}>{section.content || t('template.customContentPlaceholder')}</p>
             </div>
           ))}
       </div>

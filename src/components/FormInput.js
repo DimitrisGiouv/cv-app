@@ -1,5 +1,27 @@
 import clsx from 'clsx';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AutocompleteInput from './AutocompleteInput';
+
+const SKILL_CATEGORY_OPTIONS = [
+  'Frontend',
+  'Backend',
+  'Full Stack',
+  'Mobile',
+  'Data',
+  'DevOps',
+  'Cloud',
+  'Design',
+  'Management',
+  'Soft Skills',
+];
+
+const SKILL_LEVEL_OPTIONS = [
+  { value: 25, label: 'Beginner' },
+  { value: 50, label: 'Intermediate' },
+  { value: 75, label: 'Advanced' },
+  { value: 90, label: 'Expert' },
+];
 
 /**
  * Single text input field with label, error handling, and optional font size dropdown
@@ -8,9 +30,11 @@ export function TextInput({
   label,
   error,
   registerProps,
-  fontSize = 'text-base',
   fontSizeDropdown = null,
   labelSuffix = null,
+  customInput = null,
+  helperText = '',
+  afterInput = null,
   className = '',
 }) {
   const toggleId = labelSuffix?.props?.id;
@@ -31,20 +55,26 @@ export function TextInput({
         <div className="ml-auto shrink-0">{fontSizeDropdown}</div>
       </div>
       <div className="flex items-center gap-1">
-        <input
-          {...registerProps}
-          className={clsx(
-            'border dark:border-gray-700',
-            'dark:bg-gray-900 bg-white',
-            'text-gray-900 dark:text-gray-100',
-            'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-            'p-2 w-full h-7',
-            'focus:outline-none focus:ring-2 focus:ring-blue-600',
-            'rounded',
-            className
-          )}
-        />
+        {customInput || (
+          <input
+            {...registerProps}
+            className={clsx(
+              'border dark:border-gray-700',
+              'dark:bg-gray-900 bg-white',
+              'text-gray-900 dark:text-gray-100',
+              'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+              'p-2 w-full h-7',
+              'focus:outline-none focus:ring-2 focus:ring-blue-600',
+              'rounded',
+              className
+            )}
+          />
+        )}
       </div>
+      {helperText ? (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>
+      ) : null}
+      {afterInput ? <div className="mt-2">{afterInput}</div> : null}
       {error && (
         <span className="text-red-500 text-sm">
           {error}
@@ -64,12 +94,12 @@ export function TwoColumnTextInput({
   error2,
   registerProps1,
   registerProps2,
-  fontSize1 = 'text-base',
-  fontSize2 = 'text-base',
   fontSizeDropdown1 = null,
   fontSizeDropdown2 = null,
   labelSuffix1 = null,
   labelSuffix2 = null,
+  customInput1 = null,
+  customInput2 = null,
   className = '',
 }) {
   const toggleId1 = labelSuffix1?.props?.id;
@@ -92,19 +122,21 @@ export function TwoColumnTextInput({
           <div className="ml-auto shrink-0">{fontSizeDropdown1}</div>
         </div>
         <div className="flex items-center gap-1">
-          <input
-            {...registerProps1}
-            className={clsx(
-              'border dark:border-gray-700',
-              'dark:bg-gray-900 bg-white',
-              'text-gray-900 dark:text-gray-100',
-              'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-              'p-2 w-full h-7 flex-1',
-              'focus:outline-none focus:ring-2 focus:ring-blue-600',
-              'rounded',
-              className
-            )}
-          />
+          {customInput1 || (
+            <input
+              {...registerProps1}
+              className={clsx(
+                'border dark:border-gray-700',
+                'dark:bg-gray-900 bg-white',
+                'text-gray-900 dark:text-gray-100',
+                'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+                'p-2 w-full h-7 flex-1',
+                'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'rounded',
+                className
+              )}
+            />
+          )}
         </div>
         {error1 && (
           <span className="text-red-500 text-sm">
@@ -128,19 +160,21 @@ export function TwoColumnTextInput({
           <div className="ml-auto shrink-0">{fontSizeDropdown2}</div>
         </div>
         <div className="flex items-center gap-1">
-          <input
-            {...registerProps2}
-            className={clsx(
-              'border dark:border-gray-700',
-              'dark:bg-gray-900 bg-white',
-              'text-gray-900 dark:text-gray-100',
-              'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-              'p-2 w-full h-7 flex-1',
-              'focus:outline-none focus:ring-2 focus:ring-blue-600',
-              'rounded',
-              className
-            )}
-          />
+          {customInput2 || (
+            <input
+              {...registerProps2}
+              className={clsx(
+                'border dark:border-gray-700',
+                'dark:bg-gray-900 bg-white',
+                'text-gray-900 dark:text-gray-100',
+                'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+                'p-2 w-full h-7 flex-1',
+                'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'rounded',
+                className
+              )}
+            />
+          )}
         </div>
         {error2 && (
           <span className="text-red-500 text-sm">
@@ -159,7 +193,6 @@ export function TextAreaInput({
   label,
   error,
   registerProps,
-  fontSize = 'text-base',
   fontSizeDropdown = null,
   labelSuffix = null,
   className = '',
@@ -238,8 +271,22 @@ export function AuthInput({ placeholder, error, registerProps }) {
 /**
  * Dynamic skills field list with add/remove buttons, supports skill name, description, and proficiency level
  */
-export function FormSkills({ fields, register, errors, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormSkills({
+  fields,
+  register,
+  setValue = null,
+  errors,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  skillSuggestions = [],
+  onSkillInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.name || fontSizeControls.description);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -256,24 +303,35 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.skills')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ name: '', description: '', category: '', level: 50 })}
-          className={clsx(
-            'text-sm py-1 px-3',
-            'text-gray-800 dark:text-gray-100',
-            'hover:bg-gray-200 dark:hover:bg-gray-700',
-            'rounded transition-colors',
-            'font-medium'
-          )}
-          aria-label="Add skill"
-        >
-          ➕ {t('form.actions.addSkill')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ name: '', description: '', category: '', level: 50 })}
+            className={clsx(
+              'text-sm py-1 px-3',
+              'text-gray-800 dark:text-gray-100',
+              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'rounded transition-colors',
+              'font-medium'
+            )}
+            aria-label="Add skill"
+          >
+            ➕ {t('form.actions.addSkill')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.name || fontSizeControls.description) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.name && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.skillName')}</span>
@@ -287,48 +345,62 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">
           {t('form.empty.skills')}
         </p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
-            <div className="flex gap-2 items-end">
+        fields.map((item, index) => {
+          const skillNameRegister = register(`skills.${index}.name`, {
+            required: t('form.errors.skillNameRequired'),
+          });
+
+          return (
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Skill #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className={clsx(
+                  'text-red-500 hover:text-red-700',
+                  'py-1 px-2 rounded',
+                  'transition-colors text-sm'
+                )}
+                aria-label="Remove skill"
+              >
+                ❌
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-12 xl:items-end">
               {/* Skill Name */}
-              <div className="flex-1">
+              <div className="xl:col-span-4">
                 <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
                   {t('form.fields.skillName')}
                 </label>
-                <input
-                  type="text"
+                <AutocompleteInput
+                  name={`skills.${index}.name`}
+                  registerReturn={skillNameRegister}
+                  setValue={setValue}
+                  suggestions={skillSuggestions}
+                  onInputChange={onSkillInputChange}
                   placeholder={t('form.placeholders.skillName')}
-                  {...register(`skills.${index}.name`, {
-                    required: t('form.errors.skillNameRequired'),
-                  })}
-                  className={clsx(
-                    'border dark:border-gray-700',
-                    'dark:bg-gray-900 bg-white',
-                    'text-gray-900 dark:text-gray-100',
-                    'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-                    'p-2 w-full h-8',
-                    'text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
-                    'rounded'
-                  )}
                 />
               </div>
 
               {/* Description */}
-              <div className="flex-1">
+              <div className="xl:col-span-4">
                 <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.fields.description')}
+                  {`${t('form.fields.description')} (optional)`}
                 </label>
                 <input
                   type="text"
-                  placeholder={t('form.placeholders.skillDescription')}
+                  placeholder={`${t('form.placeholders.skillDescription')} (optional)`}
                   {...register(`skills.${index}.description`)}
                   className={clsx(
                     'border dark:border-gray-700',
@@ -344,27 +416,29 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
               </div>
 
               {/* Level */}
-              <div className="flex-shrink-0 w-20">
+              <div className="md:max-w-[12rem] xl:col-span-2 xl:max-w-none">
                 <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
                   {t('form.fields.level')}
                 </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="100"
+                <select
                   {...register(`skills.${index}.level`)}
-                  className="w-full cursor-pointer accent-blue-600"
-                />
+                  className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 p-1.5 w-full h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+                >
+                  {SKILL_LEVEL_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Category */}
-              <div className="flex-shrink-0 w-28">
+              <div className="xl:col-span-2">
                 <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.fields.category')}
+                  {`${t('form.fields.category')} (optional)`}
                 </label>
                 <input
                   type="text"
-                  placeholder={t('form.placeholders.category')}
+                  list={`skills-category-options-${index}`}
+                  placeholder={`${t('form.placeholders.category')} (optional)`}
                   {...register(`skills.${index}.category`)}
                   className={clsx(
                     'border dark:border-gray-700',
@@ -377,23 +451,13 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
                     'rounded'
                   )}
                 />
+                <datalist id={`skills-category-options-${index}`}>
+                  {SKILL_CATEGORY_OPTIONS.map((category) => (
+                    <option key={category} value={category} />
+                  ))}
+                </datalist>
               </div>
 
-              {/* Delete Button */}
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className={clsx(
-                  'text-red-500 hover:text-red-700',
-                  'py-1 px-2 rounded',
-                  'transition-colors',
-                  'h-8 flex items-center',
-                  'mb-1'
-                )}
-                aria-label="Remove skill"
-              >
-                ❌
-              </button>
             </div>
 
             {/* Error Message */}
@@ -403,7 +467,8 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
               </span>
             )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -412,8 +477,24 @@ export function FormSkills({ fields, register, errors, remove, append, fontSizeC
 /**
  * Dynamic education field list with add/remove buttons, supports school, degree, and graduation year
  */
-export function FormEducation({ fields, register, errors, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormEducation({
+  fields,
+  register,
+  setValue = null,
+  errors,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  schoolSuggestions = [],
+  onSchoolInputChange = null,
+  locationSuggestions = [],
+  onLocationInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.school || fontSizeControls.degree || fontSizeControls.year);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -430,24 +511,35 @@ export function FormEducation({ fields, register, errors, remove, append, fontSi
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.education')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ school: '', degree: '', year: '', location: '', startDate: '', endDate: '', gpa: '' })}
-          className={clsx(
-            'text-sm py-1 px-3',
-            'text-gray-800 dark:text-gray-100',
-            'hover:bg-gray-200 dark:hover:bg-gray-700',
-            'rounded transition-colors',
-            'font-medium'
-          )}
-          aria-label="Add education"
-        >
-          ➕ {t('form.actions.addEducation')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ school: '', degree: '', year: '', location: '', startDate: '', endDate: '', gpa: '' })}
+            className={clsx(
+              'text-sm py-1 px-3',
+              'text-gray-800 dark:text-gray-100',
+              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'rounded transition-colors',
+              'font-medium'
+            )}
+            aria-label="Add education"
+          >
+            ➕ {t('form.actions.addEducation')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.school || fontSizeControls.degree || fontSizeControls.year) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.school && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.schoolUniversity')}</span>
@@ -467,150 +559,107 @@ export function FormEducation({ fields, register, errors, remove, append, fontSi
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">
           {t('form.empty.education')}
         </p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
-            <div className="grid grid-cols-2 gap-2 items-end">
-              {/* School */}
-              <div className="flex-1">
-                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.fields.schoolUniversity')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('form.placeholders.school')}
-                  {...register(`education.${index}.school`, {
-                    required: t('form.errors.schoolRequired'),
-                  })}
+        fields.map((item, index) => {
+          const schoolRegister = register(`education.${index}.school`, {
+            required: t('form.errors.schoolRequired'),
+          });
+          const locationRegister = register(`education.${index}.location`);
+
+          return (
+            <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+              <div className="mb-2 flex justify-between items-center">
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                  Education #{index + 1}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
                   className={clsx(
-                    'border dark:border-gray-700',
-                    'dark:bg-gray-900 bg-white',
-                    'text-gray-900 dark:text-gray-100',
-                    'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-                    'p-2 w-full h-8',
-                    'text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
-                    'rounded'
+                    'text-red-500 hover:text-red-700',
+                    'py-1 px-2 rounded',
+                    'transition-colors text-sm'
                   )}
-                />
+                  aria-label="Remove education"
+                >
+                  ❌
+                </button>
               </div>
 
-              {/* Degree */}
-              <div className="flex-1">
-                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.fields.degree')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('form.placeholders.degree')}
-                  {...register(`education.${index}.degree`, {
-                    required: t('form.errors.degreeRequired'),
-                  })}
-                  className={clsx(
-                    'border dark:border-gray-700',
-                    'dark:bg-gray-900 bg-white',
-                    'text-gray-900 dark:text-gray-100',
-                    'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-                    'p-2 w-full h-8',
-                    'text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
-                    'rounded'
-                  )}
-                />
-              </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <AutocompleteInput
+                    name={`education.${index}.school`}
+                    registerReturn={schoolRegister}
+                    setValue={setValue}
+                    suggestions={schoolSuggestions}
+                    onInputChange={onSchoolInputChange}
+                    placeholder={t('form.placeholders.school')}
+                  />
 
-              {/* Year */}
-              <div className="flex-shrink-0 w-24">
-                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.fields.year')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('form.placeholders.year')}
-                  {...register(`education.${index}.year`, {
-                    required: t('form.errors.yearRequired'),
-                  })}
-                  className={clsx(
-                    'border dark:border-gray-700',
-                    'dark:bg-gray-900 bg-white',
-                    'text-gray-900 dark:text-gray-100',
-                    'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-                    'p-2 w-full h-8',
-                    'text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
-                    'rounded'
-                  )}
-                />
-              </div>
+                  <input
+                    type="text"
+                    placeholder={t('form.placeholders.degree')}
+                    {...register(`education.${index}.degree`, {
+                      required: t('form.errors.degreeRequired'),
+                    })}
+                    className={clsx(
+                      'border dark:border-gray-700',
+                      'dark:bg-gray-900 bg-white',
+                      'text-gray-900 dark:text-gray-100',
+                      'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+                      'p-2 w-full h-8',
+                      'text-sm',
+                      'focus:outline-none focus:ring-2 focus:ring-blue-600',
+                      'rounded'
+                    )}
+                  />
+                </div>
 
-              <div>
-                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
-                  {t('form.labels.location')}
-                </label>
-                <input
-                  type="text"
-                  placeholder={t('form.labels.location')}
-                  {...register(`education.${index}.location`)}
-                  className={clsx(
-                    'border dark:border-gray-700',
-                    'dark:bg-gray-900 bg-white',
-                    'text-gray-900 dark:text-gray-100',
-                    'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-                    'p-2 w-full h-8',
-                    'text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-blue-600',
-                    'rounded'
-                  )}
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <AutocompleteInput
+                    name={`education.${index}.location`}
+                    registerReturn={locationRegister}
+                    setValue={setValue}
+                    suggestions={locationSuggestions}
+                    onInputChange={onLocationInputChange}
+                    placeholder={t('form.labels.location')}
+                  />
+                  <input
+                    type="text"
+                    placeholder={`${t('form.placeholders.year')} (optional)`}
+                    {...register(`education.${index}.year`)}
+                    className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 w-full h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+                  />
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  placeholder={t('form.fields.start')}
-                  {...register(`education.${index}.startDate`)}
-                  className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
-                />
-                <input
-                  type="text"
-                  placeholder={t('form.fields.end')}
-                  {...register(`education.${index}.endDate`)}
-                  className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
-                />
+                <div className="grid grid-cols-[1fr_1fr_110px] gap-2">
+                  <input
+                    type="text"
+                    placeholder={t('form.fields.start')}
+                    {...register(`education.${index}.startDate`)}
+                    className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder={t('form.fields.end')}
+                    {...register(`education.${index}.endDate`)}
+                    className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+                  />
+                  <input
+                    type="text"
+                    placeholder="GPA (opt.)"
+                    {...register(`education.${index}.gpa`)}
+                    className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+                  />
+                </div>
               </div>
-
-              <div className="w-24">
-                <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">GPA</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 3.8"
-                  {...register(`education.${index}.gpa`)}
-                  className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
-                />
-              </div>
-
-              {/* Delete Button */}
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className={clsx(
-                  'text-red-500 hover:text-red-700',
-                  'py-1 px-2 rounded',
-                  'transition-colors',
-                  'h-8 flex items-center',
-                  'mb-1'
-                )}
-                aria-label="Remove education"
-              >
-                ❌
-              </button>
-            </div>
 
             {/* Error Messages */}
             {errors?.education?.[index]?.school && (
@@ -629,8 +678,10 @@ export function FormEducation({ fields, register, errors, remove, append, fontSi
               </span>
             )}
           </div>
-        ))
+          );
+        })
       )}
+
     </div>
   );
 }
@@ -638,8 +689,26 @@ export function FormEducation({ fields, register, errors, remove, append, fontSi
 /**
  * Dynamic experience field list with add/remove controls
  */
-export function FormExperience({ fields, register, errors, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormExperience({
+  fields,
+  register,
+  setValue = null,
+  errors,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  companySuggestions = [],
+  onCompanyInputChange = null,
+  roleSuggestions = [],
+  onRoleInputChange = null,
+  locationSuggestions = [],
+  onLocationInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.company || fontSizeControls.role || fontSizeControls.description);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -656,34 +725,45 @@ export function FormExperience({ fields, register, errors, remove, append, fontS
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.experience')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() =>
-            append({
-              company: '',
-              role: '',
-              location: '',
-              startDate: '',
-              endDate: '',
-              description: '',
-              bulletPoints: '',
-            })
-          }
-          className={clsx(
-            'text-sm py-1 px-3',
-            'text-gray-800 dark:text-gray-100',
-            'hover:bg-gray-200 dark:hover:bg-gray-700',
-            'rounded transition-colors',
-            'font-medium'
-          )}
-          aria-label="Add experience"
-        >
-          ➕ {t('form.actions.addExperience')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() =>
+              append({
+                company: '',
+                role: '',
+                location: '',
+                startDate: '',
+                endDate: '',
+                description: '',
+                bulletPoints: '',
+              })
+            }
+            className={clsx(
+              'text-sm py-1 px-3',
+              'text-gray-800 dark:text-gray-100',
+              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'rounded transition-colors',
+              'font-medium'
+            )}
+            aria-label="Add experience"
+          >
+            ➕ {t('form.actions.addExperience')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.company || fontSizeControls.role || fontSizeControls.description) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.company && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.company')}</span>
@@ -703,15 +783,24 @@ export function FormExperience({ fields, register, errors, remove, append, fontS
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">
           {t('form.empty.experience')}
         </p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+        fields.map((item, index) => {
+          const companyRegister = register(`experience.${index}.company`, {
+            required: t('form.errors.companyRequired'),
+          });
+          const roleRegister = register(`experience.${index}.role`, {
+            required: t('form.errors.roleRequired'),
+          });
+          const locationRegister = register(`experience.${index}.location`);
+
+          return (
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
             <div className="mb-2 flex justify-between items-center">
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 Experience #{index + 1}
@@ -731,27 +820,29 @@ export function FormExperience({ fields, register, errors, remove, append, fontS
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-2">
-              <input
-                type="text"
+              <AutocompleteInput
+                name={`experience.${index}.company`}
+                registerReturn={companyRegister}
+                setValue={setValue}
+                suggestions={companySuggestions}
+                onInputChange={onCompanyInputChange}
                 placeholder={t('form.fields.company')}
-                {...register(`experience.${index}.company`, {
-                  required: t('form.errors.companyRequired'),
-                })}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <input
-                type="text"
+              <AutocompleteInput
+                name={`experience.${index}.role`}
+                registerReturn={roleRegister}
+                setValue={setValue}
+                suggestions={roleSuggestions}
+                onInputChange={onRoleInputChange}
                 placeholder={t('form.fields.rolePosition')}
-                {...register(`experience.${index}.role`, {
-                  required: t('form.errors.roleRequired'),
-                })}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <input
-                type="text"
+              <AutocompleteInput
+                name={`experience.${index}.location`}
+                registerReturn={locationRegister}
+                setValue={setValue}
+                suggestions={locationSuggestions}
+                onInputChange={onLocationInputChange}
                 placeholder={t('form.labels.location')}
-                {...register(`experience.${index}.location`)}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -793,7 +884,8 @@ export function FormExperience({ fields, register, errors, remove, append, fontS
               </span>
             )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -802,8 +894,65 @@ export function FormExperience({ fields, register, errors, remove, append, fontS
 /**
  * Dynamic project field list with add/remove controls
  */
-export function FormProjects({ fields, register, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormProjects({
+  fields,
+  register,
+  setValue = null,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  roleSuggestions = [],
+  onRoleInputChange = null,
+  techStackSuggestions = [],
+  onTechStackInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(
+    fontSizeControls.name ||
+    fontSizeControls.role ||
+    fontSizeControls.dates ||
+    fontSizeControls.link ||
+    fontSizeControls.description
+  );
+  const [showFontControls, setShowFontControls] = useState(false);
+
+  const buildTechStackValue = (currentValue, selectedValue) => {
+    const selected = String(selectedValue || '').trim();
+    const current = String(currentValue || '');
+    if (!selected) return current;
+
+    if (!current.includes(',')) {
+      return selected;
+    }
+
+    const endsWithComma = /,\s*$/.test(current);
+    const parts = current
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (endsWithComma) {
+      parts.push(selected);
+    } else if (parts.length > 0) {
+      parts[parts.length - 1] = selected;
+    } else {
+      parts.push(selected);
+    }
+
+    // Keep first occurrence order when user repeatedly selects suggestions.
+    const seen = new Set();
+    const deduped = [];
+    parts.forEach((part) => {
+      const key = part.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      deduped.push(part);
+    });
+
+    return deduped.join(', ');
+  };
 
   return (
     <div className="mb-6">
@@ -820,24 +969,35 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.projects')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ name: '', link: '', role: '', techStack: '', startDate: '', endDate: '', description: '' })}
-          className={clsx(
-            'text-sm py-1 px-3',
-            'text-gray-800 dark:text-gray-100',
-            'hover:bg-gray-200 dark:hover:bg-gray-700',
-            'rounded transition-colors',
-            'font-medium'
-          )}
-          aria-label="Add project"
-        >
-          ➕ {t('form.actions.addProject')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ name: '', link: '', role: '', techStack: '', startDate: '', endDate: '', description: '' })}
+            className={clsx(
+              'text-sm py-1 px-3',
+              'text-gray-800 dark:text-gray-100',
+              'hover:bg-gray-200 dark:hover:bg-gray-700',
+              'rounded transition-colors',
+              'font-medium'
+            )}
+            aria-label="Add project"
+          >
+            ➕ {t('form.actions.addProject')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.name || fontSizeControls.link || fontSizeControls.description) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.name && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.projectName')}</span>
@@ -850,6 +1010,18 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
               {fontSizeControls.link}
             </div>
           )}
+          {fontSizeControls.role && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.rolePosition')} / {t('form.fields.techStack')}</span>
+              {fontSizeControls.role}
+            </div>
+          )}
+          {fontSizeControls.dates && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.start')} / {t('form.fields.end')}</span>
+              {fontSizeControls.dates}
+            </div>
+          )}
           {fontSizeControls.description && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.description')}</span>
@@ -857,15 +1029,33 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">
           {t('form.empty.projects')}
         </p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+        fields.map((item, index) => {
+          const projectRoleRegister = register(`projects.${index}.role`);
+          const techStackRegister = register(`projects.${index}.techStack`);
+
+          return (
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Project #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 py-1 px-2 rounded transition-colors text-sm"
+                aria-label="Remove project"
+              >
+                ❌
+              </button>
+            </div>
+
             <div className="grid grid-cols-2 gap-2 mb-2">
               <input
                 type="text"
@@ -873,35 +1063,30 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
                 {...register(`projects.${index}.name`)}
                 className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder={t('form.fields.projectLink')}
-                  {...register(`projects.${index}.link`)}
-                  className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="text-red-500 hover:text-red-700 px-2"
-                  aria-label="Remove project"
-                >
-                  ❌
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
               <input
                 type="text"
-                placeholder={t('form.fields.rolePosition')}
-                {...register(`projects.${index}.role`)}
+                placeholder={`${t('form.fields.projectLink')} (optional)`}
+                {...register(`projects.${index}.link`)}
                 className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <input
-                type="text"
-                placeholder={t('form.fields.techStack')}
-                {...register(`projects.${index}.techStack`)}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <AutocompleteInput
+                name={`projects.${index}.role`}
+                registerReturn={projectRoleRegister}
+                setValue={setValue}
+                suggestions={roleSuggestions}
+                onInputChange={onRoleInputChange}
+                placeholder={`${t('form.fields.rolePosition')} (optional)`}
+              />
+              <AutocompleteInput
+                name={`projects.${index}.techStack`}
+                registerReturn={techStackRegister}
+                setValue={setValue}
+                suggestions={techStackSuggestions}
+                onInputChange={onTechStackInputChange}
+                placeholder={`${t('form.fields.techStack')} (optional)`}
+                buildSelectedValue={buildTechStackValue}
               />
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -925,7 +1110,8 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
               className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 w-full text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
             />
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -934,8 +1120,21 @@ export function FormProjects({ fields, register, remove, append, fontSizeControl
 /**
  * Dynamic language field list with add/remove controls
  */
-export function FormLanguages({ fields, register, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormLanguages({
+  fields,
+  register,
+  setValue = null,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  languageSuggestions = [],
+  onLanguageInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.name || fontSizeControls.level);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -952,18 +1151,29 @@ export function FormLanguages({ fields, register, remove, append, fontSizeContro
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.languages')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ name: '', level: '', cefr: '' })}
-          className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
-          aria-label="Add language"
-        >
-          ➕ {t('form.actions.addLanguage')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ name: '', level: '', cefr: '' })}
+            className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
+            aria-label="Add language"
+          >
+            ➕ {t('form.actions.addLanguage')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.name || fontSizeControls.level) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.name && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.language')}</span>
@@ -977,19 +1187,39 @@ export function FormLanguages({ fields, register, remove, append, fontSizeContro
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">{t('form.empty.languages')}</p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+        fields.map((item, index) => {
+          const languageRegister = register(`languages.${index}.name`);
+
+          return (
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Language #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 py-1 px-2 rounded transition-colors text-sm"
+                aria-label="Remove language"
+              >
+                ❌
+              </button>
+            </div>
+
             <div className="flex gap-2 items-center">
-              <input
-                type="text"
+              <AutocompleteInput
+                name={`languages.${index}.name`}
+                registerReturn={languageRegister}
+                setValue={setValue}
+                suggestions={languageSuggestions}
+                onInputChange={onLanguageInputChange}
                 placeholder={t('form.fields.language')}
-                {...register(`languages.${index}.name`)}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded flex-1"
+                className="flex-1"
               />
               <input
                 type="text"
@@ -999,9 +1229,9 @@ export function FormLanguages({ fields, register, remove, append, fontSizeContro
               />
               <select
                 {...register(`languages.${index}.cefr`)}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded w-24"
+                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 px-2 h-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 rounded w-24"
               >
-                <option value="">CEFR</option>
+                <option value="" className="text-gray-500">CEFR</option>
                 <option value="A1">A1</option>
                 <option value="A2">A2</option>
                 <option value="B1">B1</option>
@@ -1009,17 +1239,10 @@ export function FormLanguages({ fields, register, remove, append, fontSizeContro
                 <option value="C1">C1</option>
                 <option value="C2">C2</option>
               </select>
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className="text-red-500 hover:text-red-700 px-2"
-                aria-label="Remove language"
-              >
-                ❌
-              </button>
             </div>
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -1028,8 +1251,21 @@ export function FormLanguages({ fields, register, remove, append, fontSizeContro
 /**
  * Dynamic certifications field list with add/remove controls
  */
-export function FormCertifications({ fields, register, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
+export function FormCertifications({
+  fields,
+  register,
+  setValue = null,
+  remove,
+  append,
+  fontSizeControls = {},
+  sectionToggle = null,
+  sectionToggleId = null,
+  issuerSuggestions = [],
+  onIssuerInputChange = null,
+}) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.name || fontSizeControls.issuer || fontSizeControls.year);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -1046,18 +1282,29 @@ export function FormCertifications({ fields, register, remove, append, fontSizeC
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.certifications')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ name: '', issuer: '', year: '', url: '', expirationDate: '' })}
-          className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
-          aria-label="Add certification"
-        >
-          ➕ {t('form.actions.addCertification')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ name: '', issuer: '', year: '', url: '', expirationDate: '' })}
+            className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
+            aria-label="Add certification"
+          >
+            ➕ {t('form.actions.addCertification')}
+          </button>
+        </div>
       </div>
 
-      {(fontSizeControls.name || fontSizeControls.issuer || fontSizeControls.year) && (
-        <div className="mb-3 flex flex-wrap gap-3 items-center">
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
           {fontSizeControls.name && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.sections.certifications')}</span>
@@ -1077,25 +1324,44 @@ export function FormCertifications({ fields, register, remove, append, fontSizeC
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">{t('form.empty.certifications')}</p>
       ) : (
-        fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
-            <div className="grid grid-cols-[1fr_1fr_110px_auto] gap-2 items-center">
+        fields.map((item, index) => {
+          const issuerRegister = register(`certifications.${index}.issuer`);
+
+          return (
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Certification #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 py-1 px-2 rounded transition-colors text-sm"
+                aria-label="Remove certification"
+              >
+                ❌
+              </button>
+            </div>
+
+            <div className="grid grid-cols-[1fr_1fr_110px] gap-2 items-center">
               <input
                 type="text"
                 placeholder={t('form.sections.certifications')}
                 {...register(`certifications.${index}.name`)}
                 className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <input
-                type="text"
+              <AutocompleteInput
+                name={`certifications.${index}.issuer`}
+                registerReturn={issuerRegister}
+                setValue={setValue}
+                suggestions={issuerSuggestions}
+                onInputChange={onIssuerInputChange}
                 placeholder={t('form.fields.issuer')}
-                {...register(`certifications.${index}.issuer`)}
-                className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
               <input
                 type="text"
@@ -1103,14 +1369,6 @@ export function FormCertifications({ fields, register, remove, append, fontSizeC
                 {...register(`certifications.${index}.year`)}
                 className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <button
-                type="button"
-                onClick={() => remove(index)}
-                className="text-red-500 hover:text-red-700 px-2"
-                aria-label="Remove certification"
-              >
-                ❌
-              </button>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <input
@@ -1127,14 +1385,17 @@ export function FormCertifications({ fields, register, remove, append, fontSizeC
               />
             </div>
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
 }
 
-export function FormReferences({ fields, register, remove, append, sectionToggle = null, sectionToggleId = null }) {
+export function FormReferences({ fields, register, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.references);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -1151,21 +1412,55 @@ export function FormReferences({ fields, register, remove, append, sectionToggle
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('template.references')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ name: '', title: '', company: '', contact: '' })}
-          className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
-        >
-          ➕ {t('form.actions.addReference')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ name: '', title: '', company: '', contact: '' })}
+            className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
+          >
+            ➕ {t('form.actions.addReference')}
+          </button>
+        </div>
       </div>
+
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600 dark:text-gray-400">{t('template.references')}</span>
+            {fontSizeControls.references}
+          </div>
+        </div>
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">{t('form.empty.references')}</p>
       ) : (
         fields.map((item, index) => (
-          <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-2 mb-2 items-center">
+          <div key={item.id} className="mb-4 rounded-xl border border-gray-300/80 dark:border-gray-600 bg-white/40 dark:bg-gray-900/30 p-3 shadow-sm">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Reference #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 py-1 px-2 rounded transition-colors text-sm"
+                aria-label="Remove reference"
+              >
+                ❌
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mb-2 items-center">
               <input
                 type="text"
                 placeholder={t('form.labels.fullName')}
@@ -1178,7 +1473,6 @@ export function FormReferences({ fields, register, remove, append, sectionToggle
                 {...register(`referenceEntries.${index}.title`)}
                 className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
               />
-              <button type="button" onClick={() => remove(index)} className="text-red-500 hover:text-red-700 px-2">❌</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -1201,8 +1495,10 @@ export function FormReferences({ fields, register, remove, append, sectionToggle
   );
 }
 
-export function FormCustomSections({ fields, register, remove, append, sectionToggle = null, sectionToggleId = null }) {
+export function FormCustomSections({ fields, register, remove, append, fontSizeControls = {}, sectionToggle = null, sectionToggleId = null }) {
   const { t } = useTranslation();
+  const hasFontControls = Boolean(fontSizeControls.title || fontSizeControls.content);
+  const [showFontControls, setShowFontControls] = useState(false);
 
   return (
     <div className="mb-6">
@@ -1219,20 +1515,59 @@ export function FormCustomSections({ fields, register, remove, append, sectionTo
         ) : (
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('form.sections.customSections')}</h3>
         )}
-        <button
-          type="button"
-          onClick={() => append({ title: '', content: '' })}
-          className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
-        >
-          ➕ {t('form.actions.addCustomSection')}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasFontControls ? (
+            <button
+              type="button"
+              onClick={() => setShowFontControls((prev) => !prev)}
+              className="rounded border border-gray-300 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {showFontControls ? 'Hide sizes' : 'Edit sizes'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => append({ title: '', content: '' })}
+            className="text-sm py-1 px-3 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors font-medium"
+          >
+            ➕ {t('form.actions.addCustomSection')}
+          </button>
+        </div>
       </div>
+
+      {hasFontControls && showFontControls ? (
+        <div className="mb-3 flex flex-wrap gap-3 items-center rounded border border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/40 p-2">
+          {fontSizeControls.title ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.sectionTitle')}</span>
+              {fontSizeControls.title}
+            </div>
+          ) : null}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600 dark:text-gray-400">{t('form.fields.sectionContent')}</span>
+            {fontSizeControls.content}
+          </div>
+        </div>
+      ) : null}
 
       {fields.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm italic">{t('form.empty.customSections')}</p>
       ) : (
         fields.map((item, index) => (
           <div key={item.id} className="mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="mb-2 flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Custom Section #{index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 py-1 px-2 rounded transition-colors text-sm"
+              >
+                ❌
+              </button>
+            </div>
+
             <input
               type="text"
               placeholder={t('form.fields.sectionTitle')}
@@ -1245,7 +1580,6 @@ export function FormCustomSections({ fields, register, remove, append, sectionTo
               {...register(`customSections.${index}.content`)}
               className="border dark:border-gray-700 dark:bg-gray-900 bg-white text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-2 w-full text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
             />
-            <button type="button" onClick={() => remove(index)} className="mt-2 text-red-500 hover:text-red-700 text-sm">❌ {t('home.delete')}</button>
           </div>
         ))
       )}

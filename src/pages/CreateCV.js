@@ -18,21 +18,48 @@ import {
   FormReferences,
   FormCustomSections,
 } from '../components/FormInput';
+import AutocompleteInput from '../components/AutocompleteInput';
 import { templates } from '../templates/resumeTemplates';
 import FirstTemplate from '../templates/component/firstTemplate';
 import SecondTemplate from '../templates/component/secondTemplate';
 import ThirdTemplate from '../templates/component/thirdTemplate';
 import FourthTemplate from '../templates/component/fourthTemplate';
+import FifthTemplate from '../templates/component/fifthTemplate';
 import previewBlank from '../assets/templatePreviews/blank.svg';
 import previewProfessionalBlue from '../assets/templatePreviews/professional-blue.svg';
 import previewExecutiveSplit from '../assets/templatePreviews/executive-split.svg';
 import previewEditorialClean from '../assets/templatePreviews/editorial-clean.svg';
 import previewModernCards from '../assets/templatePreviews/modern-cards.svg';
+import previewCleanProfessional from '../assets/templatePreviews/clean-professional.svg';
 import {
   generateResumeId,
   getResumeById,
   upsertResume,
 } from '../utils/resumeStorage';
+import {
+  dedupeUniversityNames,
+  fetchUniversityPayload,
+  GLOBAL_AUTOCOMPLETE_LIMIT,
+  matchesUniversityQuery,
+  sortUniversityNamesByQuery,
+} from '../utils/universityAutocomplete';
+import {
+  buildLocationIndexFromUniversities,
+  fetchCityLocationSuggestions,
+  getCertificationIssuerSuggestions,
+  getLanguageSuggestions,
+  getLocationSuggestions,
+  getSkillSuggestions,
+  getTechStackSuggestions,
+} from '../utils/fieldAutocomplete';
+import {
+  fetchOccupationPayload,
+  getOccupationSuggestions,
+} from '../utils/occupationAutocomplete';
+import {
+  fetchCompanySuggestions,
+  getCompanySuggestionsFromSources,
+} from '../utils/companyAutocomplete';
 
 /**
  * Template component mapping for dynamic template rendering
@@ -42,6 +69,7 @@ const TEMPLATE_COMPONENTS = {
   Template_2: SecondTemplate,
   Template_3: ThirdTemplate,
   Template_4: FourthTemplate,
+  Template_5: FifthTemplate,
   Empty: () => <div className="text-center p-8 text-gray-500">Empty Template</div>,
 };
 
@@ -51,6 +79,7 @@ const TEMPLATE_PREVIEWS = {
   Template_2: previewExecutiveSplit,
   Template_3: previewEditorialClean,
   Template_4: previewModernCards,
+  Template_5: previewCleanProfessional,
 };
 
 const COLOR_FIELD_KEYS = [
@@ -138,6 +167,23 @@ const TEMPLATE_COLOR_DEFAULTS = {
     dividerColor: '#52525b3d',
     surfaceColor: '#ffffff',
     surfaceAltColor: '#f9fafb',
+    skillTrackColor: '#e5e7eb',
+  },
+  Template_5: {
+    primaryColor: '#0f172a',
+    secondaryColor: '#334155',
+    tertiaryColor: '#0ea5e9',
+    textColor: '#0f172a',
+    titleColor: '#0f172a',
+    subtitleColor: '#334155',
+    sectionTitleColor: '#0f172a',
+    mutedTextColor: '#64748b',
+    headerTextColor: '#ffffff',
+    sidebarTextColor: '#0f172a',
+    linkColor: '#0ea5e9',
+    dividerColor: '#cbd5e1',
+    surfaceColor: '#ffffff',
+    surfaceAltColor: '#f8fafc',
     skillTrackColor: '#e5e7eb',
   },
   Empty: {
@@ -254,8 +300,53 @@ const normalizeVisibilityValues = (formValues) => {
   VISIBILITY_FIELD_KEYS.forEach((key) => {
     next[key] = toBooleanVisibility(next[key], DEFAULT_FORM_VALUES[key]);
   });
+  // Email and phone are mandatory personal fields.
+  next.showEmail = true;
+  next.showPhone = true;
   return next;
 };
+
+const WIZARD_FIELD_KEYS = [
+  'showHeadline',
+  'showTargetRole',
+  'showProfileImage',
+  'showContactIcons',
+  'showWebsite',
+  'showLocation',
+  'showLinkedin',
+  'showGithub',
+  'showSummary',
+  'showExperience',
+  'showProjects',
+  'showSkills',
+  'showEducation',
+  'showLanguages',
+  'showCertifications',
+  'showReferences',
+  'showCustomSections',
+];
+
+const getRecommendedLiteSelections = () => ({
+  showHeadline: true,
+  showProfileImage: false,
+  showContactIcons: true,
+  showTargetRole: true,
+  showEmail: true,
+  showPhone: true,
+  showWebsite: false,
+  showLocation: true,
+  showLinkedin: false,
+  showGithub: false,
+  showSummary: true,
+  showExperience: true,
+  showProjects: false,
+  showSkills: true,
+  showEducation: true,
+  showLanguages: false,
+  showCertifications: false,
+  showReferences: false,
+  showCustomSections: false,
+});
 
 const DEFAULT_FONT_SIZES = {
   name: 24,
@@ -276,6 +367,8 @@ const DEFAULT_FONT_SIZES = {
   educationDegree: 12,
   educationYear: 12,
   projectName: 14,
+  projectMeta: 12,
+  projectDates: 12,
   projectLink: 12,
   projectDescription: 14,
   languageName: 14,
@@ -284,6 +377,8 @@ const DEFAULT_FONT_SIZES = {
   certificationIssuer: 12,
   certificationYear: 12,
   references: 14,
+  customTitle: 14,
+  customContent: 14,
   targetRole: 14,
 };
 
@@ -446,6 +541,30 @@ export default function CreateCV() {
     const value = window.localStorage.getItem(CREATE_SECTION_NAV_VISIBILITY_KEY);
     return value === null ? true : value === 'true';
   });
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [wizardSelections, setWizardSelections] = useState(getRecommendedLiteSelections);
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState('');
+  const [schoolAutocompleteOptions, setSchoolAutocompleteOptions] = useState([]);
+  const [headlineSearchQuery, setHeadlineSearchQuery] = useState('');
+  const [headlineAutocompleteOptions, setHeadlineAutocompleteOptions] = useState([]);
+  const [targetRoleSearchQuery, setTargetRoleSearchQuery] = useState('');
+  const [targetRoleAutocompleteOptions, setTargetRoleAutocompleteOptions] = useState([]);
+  const [experienceRoleSearchQuery, setExperienceRoleSearchQuery] = useState('');
+  const [experienceRoleAutocompleteOptions, setExperienceRoleAutocompleteOptions] = useState([]);
+  const [projectRoleSearchQuery, setProjectRoleSearchQuery] = useState('');
+  const [projectRoleAutocompleteOptions, setProjectRoleAutocompleteOptions] = useState([]);
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [skillAutocompleteOptions, setSkillAutocompleteOptions] = useState([]);
+  const [languageSearchQuery, setLanguageSearchQuery] = useState('');
+  const [languageAutocompleteOptions, setLanguageAutocompleteOptions] = useState([]);
+  const [issuerSearchQuery, setIssuerSearchQuery] = useState('');
+  const [issuerAutocompleteOptions, setIssuerAutocompleteOptions] = useState([]);
+  const [techStackSearchQuery, setTechStackSearchQuery] = useState('');
+  const [techStackAutocompleteOptions, setTechStackAutocompleteOptions] = useState([]);
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [locationAutocompleteOptions, setLocationAutocompleteOptions] = useState([]);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [companyAutocompleteOptions, setCompanyAutocompleteOptions] = useState([]);
 
   const visibleThemeColorFields = themeColorFields.filter(
     (colorField) => !colorField.templates || colorField.templates.includes(selectedTemplate)
@@ -460,6 +579,18 @@ export default function CreateCV() {
   const autoSaveTimerRef = useRef(null);
   const colorUpdateQueueRef = useRef({});
   const colorRafRef = useRef(null);
+  const schoolSearchDebounceRef = useRef(null);
+  const schoolSearchAbortRef = useRef(null);
+  const locationSearchDebounceRef = useRef(null);
+  const locationSearchAbortRef = useRef(null);
+  const companySearchDebounceRef = useRef(null);
+  const companySearchAbortRef = useRef(null);
+  const companySuggestionsCacheRef = useRef([]);
+  const allOccupationsRef = useRef(null);
+  const allOccupationsFetchRef = useRef(null);
+  const allUniversitiesRef = useRef(null);
+  const allUniversitiesFetchRef = useRef(null);
+  const universityLocationIndexRef = useRef(null);
   const defaultFieldFontSizesRef = useRef(DEFAULT_FONT_SIZES);
   const dragStateRef = useRef({
     isDown: false,
@@ -509,9 +640,12 @@ export default function CreateCV() {
 
       setLastSavedAt(resumeFromStorage.updatedAt || null);
       setResumeId(resumeFromStorage.id);
+      setShowSetupWizard(false);
     } else {
       defaultFieldFontSizesRef.current = DEFAULT_FONT_SIZES;
       setTemplateColors(cloneTemplateColorDefaults());
+      setWizardSelections(getRecommendedLiteSelections());
+      setShowSetupWizard(true);
     }
 
     canAutoSaveRef.current = true;
@@ -568,7 +702,11 @@ export default function CreateCV() {
 
     const updatePageCount = () => {
       const height = target.scrollHeight || A4_PAGE_HEIGHT_PX;
-      setPageCount(Math.max(1, Math.ceil(height / A4_PAGE_HEIGHT_PX)));
+      // Ignore tiny overflow caused by sub-pixel rendering/borders so preview
+      // does not incorrectly create a second page card.
+      const OVERFLOW_TOLERANCE_PX = 8;
+      const normalizedHeight = Math.max(1, height - OVERFLOW_TOLERANCE_PX);
+      setPageCount(Math.max(1, Math.ceil(normalizedHeight / A4_PAGE_HEIGHT_PX)));
     };
 
     updatePageCount();
@@ -603,11 +741,10 @@ export default function CreateCV() {
           orientation: 'portrait',
           compress: true
         },
-        pagebreak: { 
-          mode: ['avoid-all', 'css', 'legacy'],
+        pagebreak: {
+          mode: ['css', 'legacy'],
           before: '.page-break-before',
           after: '.page-break',
-          avoid: '.page-break-inside-avoid'
         },
       })
       .from(input)
@@ -831,27 +968,529 @@ export default function CreateCV() {
     }
   }, []);
 
+  const loadAllOccupations = async () => {
+    if (Array.isArray(allOccupationsRef.current)) return allOccupationsRef.current;
+
+    if (!allOccupationsFetchRef.current) {
+      allOccupationsFetchRef.current = fetchOccupationPayload()
+        .then((payload) => {
+          const list = Array.isArray(payload) ? payload : [];
+          allOccupationsRef.current = list;
+          return list;
+        })
+        .catch(() => [])
+        .finally(() => {
+          allOccupationsFetchRef.current = null;
+        });
+    }
+
+    return allOccupationsFetchRef.current;
+  };
+
+  useEffect(() => {
+    const trimmedQuery = headlineSearchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setHeadlineAutocompleteOptions([]);
+      return;
+    }
+
+    const getSuggestions = () =>
+      getOccupationSuggestions(trimmedQuery, allOccupationsRef.current, 10);
+
+    const initial = getSuggestions();
+    setHeadlineAutocompleteOptions(initial);
+
+    if (initial.length > 0) return;
+
+    loadAllOccupations()
+      .then(() => {
+        const next = getSuggestions();
+        setHeadlineAutocompleteOptions(next);
+      })
+      .catch(() => {
+        setHeadlineAutocompleteOptions([]);
+      });
+  }, [headlineSearchQuery]);
+
+  useEffect(() => {
+    const trimmedQuery = targetRoleSearchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setTargetRoleAutocompleteOptions([]);
+      return;
+    }
+
+    const getSuggestions = () =>
+      getOccupationSuggestions(trimmedQuery, allOccupationsRef.current, 10);
+
+    const initial = getSuggestions();
+    setTargetRoleAutocompleteOptions(initial);
+
+    if (initial.length > 0) return;
+
+    loadAllOccupations()
+      .then(() => {
+        const next = getSuggestions();
+        setTargetRoleAutocompleteOptions(next);
+      })
+      .catch(() => {
+        setTargetRoleAutocompleteOptions([]);
+      });
+  }, [targetRoleSearchQuery]);
+
+  useEffect(() => {
+    const trimmedQuery = experienceRoleSearchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setExperienceRoleAutocompleteOptions([]);
+      return;
+    }
+
+    const lowerQuery = trimmedQuery.toLowerCase();
+    const localRoles = Array.isArray(formData?.experience)
+      ? formData.experience
+          .map((item) => String(item?.role || '').trim())
+          .filter(Boolean)
+      : [];
+
+    const getSuggestions = () => {
+      const occupationSuggestions = getOccupationSuggestions(trimmedQuery, allOccupationsRef.current, 10);
+      const roleMatches = localRoles.filter((role) => role.toLowerCase().includes(lowerQuery));
+      return Array.from(new Set([...occupationSuggestions, ...roleMatches])).slice(0, 12);
+    };
+
+    const initial = getSuggestions();
+    setExperienceRoleAutocompleteOptions(initial);
+
+    if (initial.length > 0) return;
+
+    loadAllOccupations()
+      .then(() => {
+        const next = getSuggestions();
+        setExperienceRoleAutocompleteOptions(next);
+      })
+      .catch(() => {
+        setExperienceRoleAutocompleteOptions([]);
+      });
+  }, [experienceRoleSearchQuery, formData?.experience]);
+
+  useEffect(() => {
+    const trimmedQuery = projectRoleSearchQuery.trim();
+    if (trimmedQuery.length < 2) {
+      setProjectRoleAutocompleteOptions([]);
+      return;
+    }
+
+    const lowerQuery = trimmedQuery.toLowerCase();
+    const localProjectRoles = Array.isArray(formData?.projects)
+      ? formData.projects
+          .map((item) => String(item?.role || '').trim())
+          .filter(Boolean)
+      : [];
+
+    const getSuggestions = () => {
+      const occupationSuggestions = getOccupationSuggestions(trimmedQuery, allOccupationsRef.current, 10);
+      const localMatches = localProjectRoles.filter((role) => role.toLowerCase().includes(lowerQuery));
+      return Array.from(new Set([...occupationSuggestions, ...localMatches])).slice(0, 12);
+    };
+
+    const initial = getSuggestions();
+    setProjectRoleAutocompleteOptions(initial);
+
+    if (initial.length > 0) return;
+
+    loadAllOccupations()
+      .then(() => {
+        const next = getSuggestions();
+        setProjectRoleAutocompleteOptions(next);
+      })
+      .catch(() => {
+        setProjectRoleAutocompleteOptions([]);
+      });
+  }, [projectRoleSearchQuery, formData?.projects]);
+
+  useEffect(() => {
+    const suggestions = getSkillSuggestions(skillSearchQuery, 12);
+    setSkillAutocompleteOptions(suggestions);
+  }, [skillSearchQuery]);
+
+  useEffect(() => {
+    const suggestions = getLanguageSuggestions(languageSearchQuery, 12);
+    setLanguageAutocompleteOptions(suggestions);
+  }, [languageSearchQuery]);
+
+  useEffect(() => {
+    const suggestions = getCertificationIssuerSuggestions(issuerSearchQuery, 12);
+    setIssuerAutocompleteOptions(suggestions);
+  }, [issuerSearchQuery]);
+
+  useEffect(() => {
+    const suggestions = getTechStackSuggestions(techStackSearchQuery, 12);
+    setTechStackAutocompleteOptions(suggestions);
+  }, [techStackSearchQuery]);
+
+  const loadAllUniversities = async () => {
+    if (Array.isArray(allUniversitiesRef.current)) return allUniversitiesRef.current;
+    if (!allUniversitiesFetchRef.current) {
+      allUniversitiesFetchRef.current = fetchUniversityPayload()
+        .then((payload) => {
+          const list = Array.isArray(payload) ? payload : [];
+          allUniversitiesRef.current = list;
+          universityLocationIndexRef.current = buildLocationIndexFromUniversities(list);
+          return list;
+        })
+        .catch(() => [])
+        .finally(() => {
+          allUniversitiesFetchRef.current = null;
+        });
+    }
+    return allUniversitiesFetchRef.current;
+  };
+
+  useEffect(() => {
+    const trimmedQuery = schoolSearchQuery.trim();
+
+    const getCachedMatches = () => {
+      if (!Array.isArray(allUniversitiesRef.current)) return [];
+      return allUniversitiesRef.current
+        .filter((entry) => matchesUniversityQuery(entry, trimmedQuery))
+        .map((entry) => entry.name);
+    };
+
+    if (schoolSearchDebounceRef.current) {
+      clearTimeout(schoolSearchDebounceRef.current);
+      schoolSearchDebounceRef.current = null;
+    }
+
+    if (schoolSearchAbortRef.current) {
+      schoolSearchAbortRef.current.abort();
+      schoolSearchAbortRef.current = null;
+    }
+
+    if (trimmedQuery.length < 2) {
+      setSchoolAutocompleteOptions([]);
+      return undefined;
+    }
+
+    const initialMatches = sortUniversityNamesByQuery(
+      dedupeUniversityNames(getCachedMatches()),
+      trimmedQuery
+    ).slice(0, GLOBAL_AUTOCOMPLETE_LIMIT);
+    setSchoolAutocompleteOptions(initialMatches);
+
+    schoolSearchDebounceRef.current = window.setTimeout(async () => {
+      const controller = new AbortController();
+      schoolSearchAbortRef.current = controller;
+
+      try {
+        const payload = await fetchUniversityPayload({ query: trimmedQuery, signal: controller.signal });
+        if (!Array.isArray(payload) || payload.length === 0) {
+          const cachedNames = sortUniversityNamesByQuery(
+            dedupeUniversityNames(getCachedMatches()),
+            trimmedQuery
+          ).slice(0, GLOBAL_AUTOCOMPLETE_LIMIT);
+          setSchoolAutocompleteOptions(cachedNames);
+          return;
+        }
+
+        const apiNames = payload
+          .filter((entry) => matchesUniversityQuery(entry, trimmedQuery))
+          .map((entry) => (typeof entry?.name === 'string' ? entry.name.trim() : ''))
+          .filter(Boolean);
+
+        let cachedNames = getCachedMatches();
+        if (cachedNames.length === 0) {
+          await loadAllUniversities();
+          cachedNames = getCachedMatches();
+        }
+
+        const merged = sortUniversityNamesByQuery(
+          dedupeUniversityNames([...apiNames, ...cachedNames]),
+          trimmedQuery
+        ).slice(0, GLOBAL_AUTOCOMPLETE_LIMIT);
+        setSchoolAutocompleteOptions(merged);
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          let cachedNames = getCachedMatches();
+          if (cachedNames.length === 0) {
+            await loadAllUniversities();
+            cachedNames = getCachedMatches();
+          }
+
+          const fallback = sortUniversityNamesByQuery(
+            dedupeUniversityNames(cachedNames),
+            trimmedQuery
+          ).slice(0, GLOBAL_AUTOCOMPLETE_LIMIT);
+          setSchoolAutocompleteOptions(fallback);
+        }
+      }
+    }, 250);
+
+    return () => {
+      if (schoolSearchDebounceRef.current) {
+        clearTimeout(schoolSearchDebounceRef.current);
+        schoolSearchDebounceRef.current = null;
+      }
+
+      if (schoolSearchAbortRef.current) {
+        schoolSearchAbortRef.current.abort();
+        schoolSearchAbortRef.current = null;
+      }
+    };
+  }, [schoolSearchQuery]);
+
+  useEffect(() => {
+    // Prime the global university index once so fallback suggestions stay global.
+    if (!allUniversitiesFetchRef.current && !Array.isArray(allUniversitiesRef.current)) {
+      loadAllUniversities().catch(() => {
+        allUniversitiesRef.current = [];
+      });
+    }
+
+    if (!allOccupationsFetchRef.current && !Array.isArray(allOccupationsRef.current)) {
+      loadAllOccupations().catch(() => {
+        allOccupationsRef.current = [];
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const trimmedQuery = locationSearchQuery.trim();
+
+    if (locationSearchDebounceRef.current) {
+      clearTimeout(locationSearchDebounceRef.current);
+      locationSearchDebounceRef.current = null;
+    }
+
+    if (locationSearchAbortRef.current) {
+      locationSearchAbortRef.current.abort();
+      locationSearchAbortRef.current = null;
+    }
+
+    if (trimmedQuery.length < 2) {
+      setLocationAutocompleteOptions([]);
+      return;
+    }
+
+    const getSuggestions = () =>
+      getLocationSuggestions(trimmedQuery, universityLocationIndexRef.current, 12);
+
+    const initial = getSuggestions();
+    setLocationAutocompleteOptions(initial);
+
+    locationSearchDebounceRef.current = window.setTimeout(async () => {
+      const controller = new AbortController();
+      locationSearchAbortRef.current = controller;
+
+      try {
+        const citySuggestions = await fetchCityLocationSuggestions({
+          query: trimmedQuery,
+          limit: 12,
+          signal: controller.signal,
+        });
+
+        if (citySuggestions.length > 0) {
+          setLocationAutocompleteOptions(citySuggestions);
+          return;
+        }
+
+        if (!Array.isArray(allUniversitiesRef.current)) {
+          await loadAllUniversities();
+        }
+
+        const fallback = getSuggestions();
+        setLocationAutocompleteOptions(fallback);
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          if (!Array.isArray(allUniversitiesRef.current)) {
+            await loadAllUniversities();
+          }
+
+          const fallback = getSuggestions();
+          setLocationAutocompleteOptions(fallback);
+        }
+      }
+    }, 250);
+
+    return () => {
+      if (locationSearchDebounceRef.current) {
+        clearTimeout(locationSearchDebounceRef.current);
+        locationSearchDebounceRef.current = null;
+      }
+
+      if (locationSearchAbortRef.current) {
+        locationSearchAbortRef.current.abort();
+        locationSearchAbortRef.current = null;
+      }
+    };
+  }, [locationSearchQuery]);
+
+  useEffect(() => {
+    const trimmedQuery = companySearchQuery.trim();
+
+    if (companySearchDebounceRef.current) {
+      clearTimeout(companySearchDebounceRef.current);
+      companySearchDebounceRef.current = null;
+    }
+
+    if (companySearchAbortRef.current) {
+      companySearchAbortRef.current.abort();
+      companySearchAbortRef.current = null;
+    }
+
+    if (trimmedQuery.length < 2) {
+      setCompanyAutocompleteOptions([]);
+      return;
+    }
+
+    const localCompanyNames = Array.isArray(formData?.experience)
+      ? formData.experience
+          .map((item) => String(item?.company || '').trim())
+          .filter(Boolean)
+      : [];
+
+    const getLocalSuggestions = () =>
+      getCompanySuggestionsFromSources(
+        trimmedQuery,
+        [localCompanyNames, companySuggestionsCacheRef.current],
+        12
+      );
+
+    const initial = getLocalSuggestions();
+    setCompanyAutocompleteOptions(initial);
+
+    companySearchDebounceRef.current = window.setTimeout(async () => {
+      const controller = new AbortController();
+      companySearchAbortRef.current = controller;
+
+      try {
+        const remoteSuggestions = await fetchCompanySuggestions({
+          query: trimmedQuery,
+          signal: controller.signal,
+          limit: 12,
+        });
+
+        if (remoteSuggestions.length > 0) {
+          companySuggestionsCacheRef.current = Array.from(
+            new Set([...companySuggestionsCacheRef.current, ...remoteSuggestions])
+          ).slice(0, 400);
+        }
+
+        const merged = getCompanySuggestionsFromSources(
+          trimmedQuery,
+          [remoteSuggestions, localCompanyNames, companySuggestionsCacheRef.current],
+          12
+        );
+        setCompanyAutocompleteOptions(merged);
+      } catch (error) {
+        if (error?.name !== 'AbortError') {
+          setCompanyAutocompleteOptions(getLocalSuggestions());
+        }
+      }
+    }, 250);
+
+    return () => {
+      if (companySearchDebounceRef.current) {
+        clearTimeout(companySearchDebounceRef.current);
+        companySearchDebounceRef.current = null;
+      }
+
+      if (companySearchAbortRef.current) {
+        companySearchAbortRef.current.abort();
+        companySearchAbortRef.current = null;
+      }
+    };
+  }, [companySearchQuery, formData?.experience]);
+
+  useEffect(() => () => {
+    if (schoolSearchDebounceRef.current) {
+      clearTimeout(schoolSearchDebounceRef.current);
+    }
+
+    if (schoolSearchAbortRef.current) {
+      schoolSearchAbortRef.current.abort();
+    }
+
+    if (locationSearchDebounceRef.current) {
+      clearTimeout(locationSearchDebounceRef.current);
+    }
+
+    if (locationSearchAbortRef.current) {
+      locationSearchAbortRef.current.abort();
+    }
+
+    if (companySearchDebounceRef.current) {
+      clearTimeout(companySearchDebounceRef.current);
+    }
+
+    if (companySearchAbortRef.current) {
+      companySearchAbortRef.current.abort();
+    }
+  }, []);
+
+  const handleSchoolAutocompleteQueryChange = (rawValue) => {
+    setSchoolSearchQuery(String(rawValue || ''));
+  };
+
+  const handleHeadlineAutocompleteQueryChange = (rawValue) => {
+    setHeadlineSearchQuery(String(rawValue || ''));
+  };
+
+  const handleTargetRoleAutocompleteQueryChange = (rawValue) => {
+    setTargetRoleSearchQuery(String(rawValue || ''));
+  };
+
+  const handleExperienceRoleAutocompleteQueryChange = (rawValue) => {
+    setExperienceRoleSearchQuery(String(rawValue || ''));
+  };
+
+  const handleProjectRoleAutocompleteQueryChange = (rawValue) => {
+    setProjectRoleSearchQuery(String(rawValue || ''));
+  };
+
+  const handleSkillAutocompleteQueryChange = (rawValue) => {
+    setSkillSearchQuery(String(rawValue || ''));
+  };
+
+  const handleLocationAutocompleteQueryChange = (rawValue) => {
+    setLocationSearchQuery(String(rawValue || ''));
+  };
+
+  const handleLanguageAutocompleteQueryChange = (rawValue) => {
+    setLanguageSearchQuery(String(rawValue || ''));
+  };
+
+  const handleIssuerAutocompleteQueryChange = (rawValue) => {
+    setIssuerSearchQuery(String(rawValue || ''));
+  };
+
+  const handleTechStackAutocompleteQueryChange = (rawValue) => {
+    setTechStackSearchQuery(String(rawValue || ''));
+  };
+
+  const handleCompanyAutocompleteQueryChange = (rawValue) => {
+    setCompanySearchQuery(String(rawValue || ''));
+  };
+
   /**
    * Compact field-level font size control with decrement/increment and reset default
    */
   const FontSizeControl = ({ fieldKey, compact = false }) => (
-    <div className={compact ? 'w-[8.75rem] shrink-0' : 'mb-2'}>
-      <div className="h-7 flex items-center justify-end gap-1">
+    <div className={compact ? 'w-[10.5rem] shrink-0' : 'mb-2'}>
+      <div className="h-7 flex items-center justify-end gap-1 rounded-md border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 px-1">
         <button
           type="button"
           onClick={() => changeFieldFontSizeBy(fieldKey, -1)}
-          className="h-7 w-6 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="h-5 w-5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-[11px] font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
           aria-label={`${t('form.fontSize')} down`}
         >
           -
         </button>
-        <div className="h-7 min-w-[2.9rem] rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-1 text-[11px] text-gray-900 dark:text-gray-100 flex items-center justify-center">
+        <div className="h-5 min-w-[3.2rem] rounded bg-gray-100 dark:bg-gray-800 px-1 text-[11px] font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-center">
           {fieldFontSizes[fieldKey]}px
         </div>
         <button
           type="button"
           onClick={() => changeFieldFontSizeBy(fieldKey, 1)}
-          className="h-7 w-6 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="h-5 w-5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-[11px] font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
           aria-label={`${t('form.fontSize')} up`}
         >
           +
@@ -859,11 +1498,11 @@ export default function CreateCV() {
         <button
           type="button"
           onClick={() => resetFieldFontSize(fieldKey)}
-          className="h-7 px-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-[10px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="h-5 w-5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
           title={`Default ${defaultFieldFontSizesRef.current[fieldKey]}px`}
           aria-label={`Reset ${fieldKey} font size`}
         >
-          <RotateCcw size={12} className="mx-auto" />
+          <RotateCcw size={10} className="mx-auto" />
         </button>
       </div>
     </div>
@@ -882,11 +1521,153 @@ export default function CreateCV() {
     />
   );
 
+  const wizardPersonalFields = [
+    { key: 'showHeadline', label: t('form.labels.professionalHeadline') },
+    { key: 'showTargetRole', label: t('form.labels.targetRole') },
+    { key: 'showProfileImage', label: 'Profile Image' },
+    { key: 'showContactIcons', label: 'Contact Icons' },
+    { key: 'showWebsite', label: t('form.labels.website') },
+    { key: 'showLocation', label: t('form.labels.location') },
+    { key: 'showLinkedin', label: t('form.labels.linkedin') },
+    { key: 'showGithub', label: t('form.labels.github') },
+  ];
+
+  const wizardSectionFields = [
+    { key: 'showSummary', label: t('create.professionalSummary') },
+    { key: 'showExperience', label: t('template.experience') },
+    { key: 'showProjects', label: t('template.projects') },
+    { key: 'showSkills', label: t('template.skills') },
+    { key: 'showEducation', label: t('template.education') },
+    { key: 'showLanguages', label: t('template.languages') },
+    { key: 'showCertifications', label: t('template.certifications') },
+    { key: 'showReferences', label: t('template.references') },
+    { key: 'showCustomSections', label: 'Custom Sections' },
+  ];
+
+  const toggleWizardOption = (fieldKey) => {
+    setWizardSelections((prev) => ({ ...prev, [fieldKey]: !prev[fieldKey] }));
+  };
+
+  const setAllWizardOptions = (enabled) => {
+    setWizardSelections((prev) => {
+      const next = { ...prev };
+      WIZARD_FIELD_KEYS.forEach((key) => {
+        next[key] = enabled;
+      });
+      return next;
+    });
+  };
+
+  const applyWizardSelections = () => {
+    WIZARD_FIELD_KEYS.forEach((key) => {
+      setValue(key, !!wizardSelections[key], { shouldDirty: true, shouldTouch: true });
+    });
+    setShowSetupWizard(false);
+  };
+
+  const skipWizard = () => {
+    setShowSetupWizard(false);
+  };
+
+  const websiteRegister = register('website');
+  const locationRegister = register('location');
+  const headlineRegister = register('headline');
+  const targetRoleRegister = register('targetRole');
+  const sectionGroupClass = 'mt-8 pt-6 border-t border-gray-200 dark:border-gray-700';
+
   return (
     <form 
       onSubmit={handleSubmit(onSubmit)} 
       className="flex w-full h-full min-h-0 overflow-hidden"
     >
+      {showSetupWizard ? (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-2xl">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">New CV Setup</h3>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              Select which information you want enabled before you start editing.
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAllWizardOptions(true)}
+                className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Enable All
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllWizardOptions(false)}
+                className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Disable All
+              </button>
+              <button
+                type="button"
+                onClick={() => setWizardSelections(getRecommendedLiteSelections())}
+                className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Recommended Lite
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <div>
+                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">Personal Fields</h4>
+                <div className="grid gap-2">
+                  {wizardPersonalFields.map((field) => (
+                    <label key={field.key} className="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!wizardSelections[field.key]}
+                        onChange={() => toggleWizardOption(field.key)}
+                        className="h-4 w-4 cursor-pointer accent-blue-600"
+                      />
+                      {field.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">Sections</h4>
+                <div className="grid gap-2">
+                  {wizardSectionFields.map((field) => (
+                    <label key={field.key} className="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!wizardSelections[field.key]}
+                        onChange={() => toggleWizardOption(field.key)}
+                        className="h-4 w-4 cursor-pointer accent-blue-600"
+                      />
+                      {field.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={skipWizard}
+                className="rounded border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={applyWizardSelections}
+                className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Start Editing
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ===== LEFT PANEL: FORM INPUTS ===== */}
         <div
           ref={leftPanelRef}
@@ -1011,7 +1792,21 @@ export default function CreateCV() {
               label={t('form.labels.professionalHeadline')}
               labelSuffix={renderVisibilityCheckbox('showHeadline')}
               error={errors.headline?.message}
-              registerProps={register('headline')}
+              registerProps={{
+                ...headlineRegister,
+                placeholder: t('form.placeholders.professionalHeadline'),
+              }}
+              customInput={
+                <AutocompleteInput
+                  name="headline"
+                  registerReturn={headlineRegister}
+                  setValue={setValue}
+                  suggestions={headlineAutocompleteOptions}
+                  onInputChange={handleHeadlineAutocompleteQueryChange}
+                  placeholder={t('form.placeholders.professionalHeadline')}
+                  className="h-7"
+                />
+              }
               fontSizeDropdown={
                 <FontSizeControl fieldKey="headline" compact />
               }
@@ -1021,7 +1816,21 @@ export default function CreateCV() {
               label={t('form.labels.targetRole')}
               labelSuffix={renderVisibilityCheckbox('showTargetRole')}
               error={errors.targetRole?.message}
-              registerProps={register('targetRole')}
+              registerProps={{
+                ...targetRoleRegister,
+                placeholder: t('form.placeholders.targetRole'),
+              }}
+              customInput={
+                <AutocompleteInput
+                  name="targetRole"
+                  registerReturn={targetRoleRegister}
+                  setValue={setValue}
+                  suggestions={targetRoleAutocompleteOptions}
+                  onInputChange={handleTargetRoleAutocompleteQueryChange}
+                  placeholder={t('form.placeholders.targetRole')}
+                  className="h-7"
+                />
+              }
               fontSizeDropdown={
                 <FontSizeControl fieldKey="targetRole" compact />
               }
@@ -1086,23 +1895,26 @@ export default function CreateCV() {
             <TwoColumnTextInput
               label1={t('form.labels.email')}
               label2={t('form.labels.phone')}
-              labelSuffix1={renderVisibilityCheckbox('showEmail')}
-              labelSuffix2={renderVisibilityCheckbox('showPhone')}
               error1={errors.email?.message}
               error2={errors.phone?.message}
               registerProps1={register('email', {
                 validate: {
-                  requiredIfShown: (value) => {
-                    if (!formData.showEmail) return true;
+                  required: (value) => {
                     return String(value || '').trim() ? true : t('form.errors.emailRequired');
                   },
-                  formatIfShown: (value) => {
-                    if (!formData.showEmail || !String(value || '').trim()) return true;
+                  format: (value) => {
+                    if (!String(value || '').trim()) return true;
                     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim()) || t('form.errors.invalidEmail');
                   },
                 },
               })}
-              registerProps2={register('phone')}
+              registerProps2={register('phone', {
+                validate: {
+                  required: (value) => {
+                    return String(value || '').trim() ? true : t('form.errors.phoneRequired');
+                  },
+                },
+              })}
               fontSizeDropdown1={
                 <FontSizeControl fieldKey="email" compact />
               }
@@ -1118,8 +1930,19 @@ export default function CreateCV() {
               labelSuffix2={renderVisibilityCheckbox('showLocation')}
               error1={errors.website?.message}
               error2={errors.location?.message}
-              registerProps1={register('website')}
-              registerProps2={register('location')}
+              registerProps1={websiteRegister}
+              registerProps2={locationRegister}
+              customInput2={
+                <AutocompleteInput
+                  name="location"
+                  registerReturn={locationRegister}
+                  setValue={setValue}
+                  suggestions={locationAutocompleteOptions}
+                  onInputChange={handleLocationAutocompleteQueryChange}
+                  placeholder={t('form.labels.location')}
+                  className="h-7"
+                />
+              }
               fontSizeDropdown1={
                 <FontSizeControl fieldKey="website" compact />
               }
@@ -1163,13 +1986,20 @@ export default function CreateCV() {
           </div>
 
           {/* Skills Section */}
-          <div ref={registerSectionRef('experience')}>
+          <div ref={registerSectionRef('experience')} className={sectionGroupClass}>
             <FormExperience
               fields={experienceFields}
               register={register}
+              setValue={setValue}
               errors={errors}
               remove={removeExperience}
               append={appendExperience}
+              companySuggestions={companyAutocompleteOptions}
+              onCompanyInputChange={handleCompanyAutocompleteQueryChange}
+              roleSuggestions={experienceRoleAutocompleteOptions}
+              onRoleInputChange={handleExperienceRoleAutocompleteQueryChange}
+              locationSuggestions={locationAutocompleteOptions}
+              onLocationInputChange={handleLocationAutocompleteQueryChange}
               sectionToggle={renderVisibilityCheckbox('showExperience')}
               sectionToggleId="toggle-showExperience"
               fontSizeControls={{
@@ -1180,27 +2010,41 @@ export default function CreateCV() {
             />
           </div>
 
-          <div ref={registerSectionRef('projects')}>
+          <div ref={registerSectionRef('projects')} className={sectionGroupClass}>
             <FormProjects
               fields={projectFields}
               register={register}
+              setValue={setValue}
               remove={removeProject}
               append={appendProject}
+              roleSuggestions={projectRoleAutocompleteOptions}
+              onRoleInputChange={handleProjectRoleAutocompleteQueryChange}
+              techStackSuggestions={techStackAutocompleteOptions}
+              onTechStackInputChange={handleTechStackAutocompleteQueryChange}
+              sectionToggle={renderVisibilityCheckbox('showProjects')}
+              sectionToggleId="toggle-showProjects"
               fontSizeControls={{
                 name: <FontSizeControl fieldKey="projectName" compact />,
+                role: <FontSizeControl fieldKey="projectMeta" compact />,
+                dates: <FontSizeControl fieldKey="projectDates" compact />,
                 link: <FontSizeControl fieldKey="projectLink" compact />,
                 description: <FontSizeControl fieldKey="projectDescription" compact />,
               }}
             />
           </div>
 
-          <div ref={registerSectionRef('skills')}>
+          <div ref={registerSectionRef('skills')} className={sectionGroupClass}>
             <FormSkills
               fields={skillFields}
               register={register}
+              setValue={setValue}
               errors={errors}
               remove={removeSkill}
               append={appendSkill}
+              skillSuggestions={skillAutocompleteOptions}
+              onSkillInputChange={handleSkillAutocompleteQueryChange}
+              sectionToggle={renderVisibilityCheckbox('showSkills')}
+              sectionToggleId="toggle-showSkills"
               fontSizeControls={{
                 name: <FontSizeControl fieldKey="skillName" compact />,
                 description: <FontSizeControl fieldKey="skillDescription" compact />,
@@ -1209,13 +2053,20 @@ export default function CreateCV() {
           </div>
 
           {/* Education Section */}
-          <div ref={registerSectionRef('education')}>
+          <div ref={registerSectionRef('education')} className={sectionGroupClass}>
             <FormEducation
               fields={educationFields}
               register={register}
+              setValue={setValue}
               errors={errors}
               remove={removeEducation}
               append={appendEducation}
+              sectionToggle={renderVisibilityCheckbox('showEducation')}
+              sectionToggleId="toggle-showEducation"
+              schoolSuggestions={schoolAutocompleteOptions}
+              onSchoolInputChange={handleSchoolAutocompleteQueryChange}
+              locationSuggestions={locationAutocompleteOptions}
+              onLocationInputChange={handleLocationAutocompleteQueryChange}
               fontSizeControls={{
                 school: <FontSizeControl fieldKey="educationSchool" compact />,
                 degree: <FontSizeControl fieldKey="educationDegree" compact />,
@@ -1224,12 +2075,17 @@ export default function CreateCV() {
             />
           </div>
 
-          <div ref={registerSectionRef('languages')}>
+          <div ref={registerSectionRef('languages')} className={sectionGroupClass}>
             <FormLanguages
               fields={languageFields}
               register={register}
+              setValue={setValue}
               remove={removeLanguage}
               append={appendLanguage}
+              languageSuggestions={languageAutocompleteOptions}
+              onLanguageInputChange={handleLanguageAutocompleteQueryChange}
+              sectionToggle={renderVisibilityCheckbox('showLanguages')}
+              sectionToggleId="toggle-showLanguages"
               fontSizeControls={{
                 name: <FontSizeControl fieldKey="languageName" compact />,
                 level: <FontSizeControl fieldKey="languageLevel" compact />,
@@ -1237,12 +2093,17 @@ export default function CreateCV() {
             />
           </div>
 
-          <div ref={registerSectionRef('certifications')}>
+          <div ref={registerSectionRef('certifications')} className={sectionGroupClass}>
             <FormCertifications
               fields={certificationFields}
               register={register}
+              setValue={setValue}
               remove={removeCertification}
               append={appendCertification}
+              issuerSuggestions={issuerAutocompleteOptions}
+              onIssuerInputChange={handleIssuerAutocompleteQueryChange}
+              sectionToggle={renderVisibilityCheckbox('showCertifications')}
+              sectionToggleId="toggle-showCertifications"
               fontSizeControls={{
                 name: <FontSizeControl fieldKey="certificationName" compact />,
                 issuer: <FontSizeControl fieldKey="certificationIssuer" compact />,
@@ -1251,32 +2112,34 @@ export default function CreateCV() {
             />
           </div>
 
-          <div ref={registerSectionRef('references')}>
-            <div className="mb-6">
-              <TextAreaInput
-                label={t('form.labels.references')}
-                error={errors.referencesNote?.message}
-                registerProps={register('referencesNote')}
-                fontSizeDropdown={
-                  <FontSizeControl fieldKey="references" compact />
-                }
-              />
-            </div>
-
+          <div ref={registerSectionRef('references')} className={sectionGroupClass}>
             <FormReferences
               fields={referenceFields}
               register={register}
               remove={removeReference}
               append={appendReference}
+              sectionToggle={renderVisibilityCheckbox('showReferences')}
+              sectionToggleId="toggle-showReferences"
+              fontSizeControls={{
+                references: <FontSizeControl fieldKey="references" compact />,
+              }}
             />
           </div>
 
-          <FormCustomSections
-            fields={customSectionFields}
-            register={register}
-            remove={removeCustomSection}
-            append={appendCustomSection}
-          />
+          <div ref={registerSectionRef('customSections')} className={sectionGroupClass}>
+            <FormCustomSections
+              fields={customSectionFields}
+              register={register}
+              remove={removeCustomSection}
+              append={appendCustomSection}
+              sectionToggle={renderVisibilityCheckbox('showCustomSections')}
+              sectionToggleId="toggle-showCustomSections"
+              fontSizeControls={{
+                title: <FontSizeControl fieldKey="customTitle" compact />,
+                content: <FontSizeControl fieldKey="customContent" compact />,
+              }}
+            />
+          </div>
 
           {/* Submit Button */}
           <button

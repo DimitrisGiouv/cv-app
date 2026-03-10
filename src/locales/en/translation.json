@@ -89,6 +89,7 @@
     "errors": {
       "nameRequired": "Name is required",
       "emailRequired": "Email is required",
+      "phoneRequired": "Phone is required",
       "invalidEmail": "Invalid email format",
       "skillNameRequired": "Skill name is required",
       "schoolRequired": "School is required",
@@ -160,6 +161,8 @@
       "experienceDescription": "Describe responsibilities and achievements",
       "experienceBullets": "One achievement per line",
       "projectDescription": "Project summary and impact",
+      "professionalHeadline": "Professional identity (e.g., Software Engineer)",
+      "targetRole": "Role you are applying for (e.g., Frontend Engineer)",
       "role": "Role",
       "company": "Company",
       "projectName": "Project Name"
@@ -181,6 +184,7 @@
     "company": "Company",
     "projectName": "Project Name",
     "headline": "Headline or Role",
+    "targetRoleLabel": "Target Role",
     "targetRolePlaceholder": "Target Role",
     "phonePlaceholder": "+30 69X XXX XXXX",
     "emailPlaceholder": "name@example.com",
